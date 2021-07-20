@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: nginx
+spec:
+  releaseName: ingress-nginx
+  chart:
+    spec:
+      chart: ingress-nginx
+      sourceRef:
+        kind: HelmRepository
+        name: ingress-nginx
+        namespace: flux-system
+  interval: 5m
+  install:
+    remediation:
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 5
+  # Default values
+  # https://github.com/kubernetes/ingress-nginx/blob/master/charts/ingress-nginx/values.yaml
+  values:
+    controller:
+      service:
+        type: LoadBalancer
+      replicaCount: 2
+    defaultBackend:
+      enabled: "true"

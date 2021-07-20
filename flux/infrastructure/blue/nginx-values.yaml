@@ -1,0 +1,22 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: nginx
+spec:
+  chart:
+    spec:
+      chart: ingress-nginx
+      version: "3.34.0"
+  # Default values
+  # https://github.com/kubernetes/ingress-nginx/blob/master/charts/ingress-nginx/values.yaml
+  values:
+    controller:
+      service:
+        annotations:
+          service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+          service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "snet-aks-blue-svc-lb"
+        type: LoadBalancer
+        loadBalancerIP: 10.0.32.4
+        externalTrafficPolicy: Local
+      config:
+        use-forwarded-headers: "true"
