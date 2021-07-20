@@ -50,7 +50,7 @@ In this sample, assigned strong privileges to admin so that you can try it smoot
 
 ## Usage <a name = "usage"></a>
 
-### Prepate variables
+### Prepare variables
 
 The policy of this sample for variables such as IDs and secrets is as follows
 
@@ -60,7 +60,7 @@ The policy of this sample for variables such as IDs and secrets is as follows
   * Code encryption on repo is sometimes overkill and complex procedures can trigger accidents
 * Secrets and values generated without regularity not written in the source code
   * use Secret Store
-    * Azure key Valut and Secret Store CSI Driver
+    * Azure Key Valut and Secret Store CSI Driver
       * Create and inject automaticly on this sample (Redis password for sample app)
         * Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/shared/main.tf#L289)
         * [Pass](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/blue/main.tf#L399) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
