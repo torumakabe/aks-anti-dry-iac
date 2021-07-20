@@ -1,0 +1,59 @@
+name: "CI for PR (flux)"
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'flux/**'
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ci:
+    name: "CI"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - name: "Diff files"
+        id: diff
+        working-directory: ./test/scripts
+        shell: bash -x {0}
+        continue-on-error: true
+        run: |
+          ./diff-flux.sh > ./diff.log
+          DIFF_LOG=$(cat ./diff.log)
+          DIFF_LOG="${DIFF_LOG//'%'/'%25'}"
+          DIFF_LOG="${DIFF_LOG//$'\n'/'%0A'}"
+          DIFF_LOG="${DIFF_LOG//$'\r'/'%0D'}"
+          echo "::set-output name=DIFF_LOG::$DIFF_LOG"
+
+      - name: "Create comment for PR (diff flux files between Blue & Green)"
+        uses: actions/github-script@v4
+        env:
+          DIFF: "${{ steps.diff.outputs.DIFF_LOG }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Diff flux files between Blue & Green
+
+            <details><summary>Show Diff</summary>
+
+            \`\`\`\n
+            ${process.env.DIFF}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })

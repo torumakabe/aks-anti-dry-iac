@@ -1,0 +1,84 @@
+name: "CI for PR (Terraform/Shared)"
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/shared/**'
+  workflow_dispatch:
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ci:
+    name: "CI"
+    runs-on: ubuntu-latest
+    env:
+      ARM_SUBSCRIPTION_ID: ${{  secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID: ${{  secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{  secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{  secrets.ARM_TENANT_ID }}
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v2
+
+      - name: "Setup Terraform"
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.2
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: "Terraform Format"
+        id: fmt
+        working-directory: ./terraform/shared
+        run: terraform fmt -check
+
+      - name: "Terraform Init"
+        id: init
+        working-directory: ./terraform/shared
+        run: terraform init -backend-config=backend.hcl
+
+      - name: "Terraform Validate"
+        id: validate
+        working-directory: ./terraform/shared
+        run: terraform validate -no-color
+
+      - name: "Terraform Plan"
+        id: plan
+        working-directory: ./terraform/shared
+        run: terraform plan -var-file=sample.tfvars -no-color
+        continue-on-error: true
+
+
+      - name: "Create comment for PR (Terraform fmt/validate/plan)"
+        uses: actions/github-script@v4
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Check Terraform files (Shared)
+            #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
