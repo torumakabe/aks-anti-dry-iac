@@ -175,3 +175,4 @@ Removed the Service IP of Blue without disruption. So, you can destroy Blue clus
 ## Notes <a name = "notes"></a>
 
 * Always be aware of the context of which cluster you are currently working on
+  * [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
