@@ -89,7 +89,7 @@ You can also [use environment variables](https://www.terraform.io/docs/language/
 2. Azure Resources (Blue/Green): [Terraform dir](./terraform/blue)
 3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts/blue/bootstrap.sh)
 
-You can operate Blue/Green independently from step 2.
+You can operate Blue/Green independently from step 2, but always be aware of the context of clusters.
 
 ### CI
 
