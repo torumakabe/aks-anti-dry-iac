@@ -79,7 +79,10 @@ You have to prepare the following variables.
 
 * Azure Resources (Shared): [Terraform tfvars](./terraform/shared/sample.tfvars)
 * Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/sample.tfvars)
-* Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts/blue/bootstrap.sh)
+* Kubernetes Resources (Blue/Green):
+  * [Flux helper script](./flux/scripts/blue/bootstrap.sh)
+  * [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
+
 
 You can also [use environment variables](https://www.terraform.io/docs/language/values/variables.html) instead of tfvars file.
 
@@ -176,3 +179,4 @@ Removed the Service IP of Blue without disruption. So, you can destroy the Blue 
 
 * Always be aware of the context of which cluster you are currently working on
   * [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
+  * [zsh-kubectl-prompt](https://github.com/superbrothers/zsh-kubectl-prompt)
