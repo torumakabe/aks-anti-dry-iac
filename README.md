@@ -62,12 +62,12 @@ The policy of this sample for variables such as IDs and secrets is as follows.
   - use Secret Store
     - Azure Key Vault and Secret Store CSI Driver
       - Create and inject automatically on this sample (Redis password for sample app)
-        - Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/shared/main.tf#L289)
-        - [Pass](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/blue/main.tf#L399) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
+        - Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-anti-dry-iac/blob/main/terraform/shared/main.tf#L297)
+        - [Pass](https://github.com/ToruMakabe/aks-anti-dry-iac/blob/main/terraform/blue/main.tf#L393) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
         - Kustomize [SecretProviderClass](./flux/apps/base/session-checker/secret-provider-class.yaml) manifest [with ConfigMap](./flux/clusters/blue/apps.yaml)
         - Pass Secret to sample app [as environment variable](./flux/apps/base/session-checker/deployment.yaml)
     - GitHub Secret
-      - [For CI](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/.github/workflows/ci-terraform-shared.yaml#L17)
+      - For CI
         - ARM_TENANT_ID: Azure AD Tenant ID
         - ARM_SUBSCRIPTION_ID: Azure Subscription ID
         - ARM_CLIENT_ID: Service Principal Client ID
@@ -75,8 +75,8 @@ The policy of this sample for variables such as IDs and secrets is as follows.
 
 You have to prepare the following variables.
 
-- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/test.tfvars)
-- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/test.tfvars)
+- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/sample.tfvars)
+- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/sample.tfvars)
 - Kubernetes Resources (Blue/Green):
   - [Flux helper script](./flux/scripts/bootstrap.sh)
   - [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
@@ -139,7 +139,7 @@ Note that this CI does not include the E2E test. Please consider if necessary.
 
 ### Switch Blue/Green
 
-You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/test.tfvars) and applying it while continuing the service.
+You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/sample.tfvars) and applying it while continuing the service.
 
 This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./flux/infrastructure/blue/nginx-values.yaml).
 
