@@ -11,10 +11,8 @@ aks_network = {
   subnet_svc_lb_id = "/subscriptions/your-subscription-id/resourceGroups/rg-aks-anti-dry-shared/providers/Microsoft.Network/virtualNetworks/vnet-default/subnets/snet-aks-green-svc-lb"
 }
 log_analytics = {
-  workspace_id = "/subscriptions/your-subscription-id/resourcegroups/defaultresourcegroup-ejp/providers/microsoft.operationalinsights/workspaces/your-workspace"
+  workspace_id = "/subscriptions/your-subscription-id/resourcegroups/rg-your-log-analytics/providers/microsoft.operationalinsights/workspaces/your-workspace"
 }
 demoapp = {
   key_vault_id = "/subscriptions/your-subscription-id/resourceGroups/rg-aks-anti-dry-shared/providers/Microsoft.KeyVault/vaults/your-prefix-kv-demoapp"
 }
-# Optional: If you need to run 'terraform plan' for exsiting AKS cluster in CI. (Non-immutable)
-# ci_sp_oid = "your-service-principal-object-id-for-ci"

@@ -27,24 +27,24 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 ## Prerequisites & Tested <a name = "prerequisites"></a>
 
-* [Terraform](https://www.terraform.io/docs/index.html): 1.0.2
-  * hashicorp/azurerm: 2.68
-  * hashicorp/kubernetes: 2.3
-  * State store: Terraform Cloud
-* [Flux(v2)](https://fluxcd.io/docs/): 0.16.1
+- [Terraform](https://www.terraform.io/docs/index.html): 1.0.9
+  - hashicorp/azurerm: 2.81
+  - hashicorp/kubernetes: 2.6
+  - State store: Local
+- [Flux(v2)](https://fluxcd.io/docs/): 0.19.0
 
 ### Privileges required for execution
 
-* Admin
-  * Azure Subscription Owner (Azure role)
-    * Need User Access Administrator for role assignment
-  * Azure Kubernetes Service Cluster Admin Role (Azure role)
-    * For execution of Flux
-    * If you are an Azure Subscription Owner, a separate assignment is not required
-  * GitHub Repo control (GitHub PAT)
-    * For execution of Flux
-* GitHub Actions CI (Azure Service Principal)
-  * Azure Subscription Reader (Azure role)
+- Admin
+  - Azure Subscription Owner (Azure role)
+    - Need User Access Administrator for role assignment
+  - Azure Kubernetes Service Cluster Admin Role (Azure role)
+    - For execution of Flux
+    - If you are an Azure Subscription Owner, a separate assignment is not required
+  - GitHub Repo control (GitHub PAT)
+    - For execution of Flux
+- GitHub Actions CI (Azure Service Principal)
+  - Azure Subscription Reader (Azure role)
 
 In this sample, assigned strong privileges to admin so that you can try it smoothly for your PoC. In your actual operation, please be aware of the least privilege and fine-grained scope for you.
 
@@ -54,35 +54,32 @@ In this sample, assigned strong privileges to admin so that you can try it smoot
 
 The policy of this sample for variables such as IDs and secrets is as follows.
 
-* Operate in a private repository
-* Static IDs like Azure resource IDs can be written in the source code
-  * To clarify the operation target and share it with the team as code
-  * Code encryption on repo is sometimes overkilling and complex procedures can trigger accidents
-* Secrets and values generated without regularity not written in the source code
-  * use Secret Store
-    * Azure Key Vault and Secret Store CSI Driver
-      * Create and inject automatically on this sample (Redis password for sample app)
-        * Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/shared/main.tf#L289)
-        * [Pass](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/blue/main.tf#L399) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
-        * Kustomize [SecretProviderClass](./flux/apps/base/session-checker/secret-provider-class.yaml) manifest [with ConfigMap](./flux/clusters/blue/apps.yaml)
-        * Pass Secret to sample app [as environment variable](./flux/apps/base/session-checker/deployment.yaml)
-    * GitHub Secret
-      * [For CI](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/.github/workflows/ci-terraform-shared.yaml#L17)
-        * TF_API_TOKEN: Token for Terraform Cloud
-        * ARM_TENANT_ID: Azure AD Tenant ID
-        * ARM_SUBSCRIPTION_ID: Azure Subscription ID
-        * ARM_CLIENT_ID: Service Principal Client ID
-        * ARM_CLIENT_SECRET: Service Principal Client Secret
-
+- Operate in a private repository
+- Static IDs like Azure resource IDs can be written in the source code
+  - To clarify the operation target and share it with the team as code
+  - Code encryption on repo is sometimes overkilling and complex procedures can trigger accidents
+- Secrets and values generated without regularity not written in the source code
+  - use Secret Store
+    - Azure Key Vault and Secret Store CSI Driver
+      - Create and inject automatically on this sample (Redis password for sample app)
+        - Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/shared/main.tf#L289)
+        - [Pass](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/terraform/blue/main.tf#L399) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
+        - Kustomize [SecretProviderClass](./flux/apps/base/session-checker/secret-provider-class.yaml) manifest [with ConfigMap](./flux/clusters/blue/apps.yaml)
+        - Pass Secret to sample app [as environment variable](./flux/apps/base/session-checker/deployment.yaml)
+    - GitHub Secret
+      - [For CI](https://github.com/ToruMakabe/aks-safe-deploy/blob/08ae26ad813a0c25f641afb5eb54b0c2518f2dc9/.github/workflows/ci-terraform-shared.yaml#L17)
+        - ARM_TENANT_ID: Azure AD Tenant ID
+        - ARM_SUBSCRIPTION_ID: Azure Subscription ID
+        - ARM_CLIENT_ID: Service Principal Client ID
+        - ARM_CLIENT_SECRET: Service Principal Client Secret
 
 You have to prepare the following variables.
 
-* Azure Resources (Shared): [Terraform tfvars](./terraform/shared/sample.tfvars)
-* Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/sample.tfvars)
-* Kubernetes Resources (Blue/Green):
-  * [Flux helper script](./flux/scripts/blue/bootstrap.sh)
-  * [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
-
+- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/test.tfvars)
+- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/test.tfvars)
+- Kubernetes Resources (Blue/Green):
+  - [Flux helper script](./flux/scripts/bootstrap.sh)
+  - [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
 
 You can also [use environment variables](https://www.terraform.io/docs/language/values/variables.html) instead of tfvars file.
 
@@ -90,27 +87,59 @@ You can also [use environment variables](https://www.terraform.io/docs/language/
 
 1. Azure Resources (Shared): [Terraform dir](./terraform/shared)
 2. Azure Resources (Blue/Green): [Terraform dir](./terraform/blue)
-3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts/blue/bootstrap.sh)
+3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts/bootstrap.sh)
 
-You can operate Blue/Green independently from step 2, but always be aware of the context of clusters.
+You can operate Blue/Green in any order, but always be aware of the context of clusters.
 
+### Test
+
+This repo have two types of test.
+
+#### Unit
+
+Unit test should be run frequently to detect minor errors early. So, unit test of this repo
+
+- In this test, 'unit' is a execution unit(state) of Terraform.
+- Focus on format, static check and test that finish in a short time
+  - terraform fmt, validate
+  - TFLint
+  - terraform plan (from Go test program)
+- Feel free to run
+  - Just run ["make test"](./test/unit/Makefile)
+
+Set variables on test.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+
+#### E2E
+
+E2E test should also be automated and always ready to run to see the impact of infrastructure changes on applications.
+
+- Actually create the infrastructure resources and run application on test fixtures
+  - terraform apply (from Go test program)
+  - create a sample app with Flux GitOps & check the endpoint (from Go test program)
+- Feel free to run
+  - Just run ["make test"](./test/e2e/Makefile)
+  - Cleanup the resources after test automatically
+
+Set variables on test.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+  
 ### CI
 
 Pull Requests trigger the following GitHub Actions as CI. These actions post the result as comments to the PR.
 
-* diff between Blue/Green Flux files: [Github Actions workflow](./.github/workflows/ci-flux.yaml)
-  * PR for files /flux directory
-* format/validate/plan Shared Terraform files: [Github Actions workflow](./.github/workflows/ci-terraform-shared.yaml)
-  * PR for files /terraform/shared directory
-* diff between Blue/Green Terrarform files, and format/validate: [Github Actions workflow](./.github/workflows/ci-terraform-blue.yaml)
-  * PR for files /terraform/blue or green directory
-  * not run plan
-    * To realize the concept of immutable
-    * To not assign strong privileges to CI (Azure Kubernetes Service Cluster Admin Role is required to execute plan)
+- diff between Blue/Green Flux files: [Github Actions workflow](./.github/workflows/ci-flux.yaml)
+  - PR for files /flux directory
+- diff between Blue/Green Terrarform files, and format/validate: [Github Actions workflow](./.github/workflows/ci-terraform-blue.yaml)
+  - PR for files /terraform/blue|green directory
+- format(check)/lint/validate/plan Terraform files: [Github Actions workflow](./.github/workflows/ci-terraform-shared.yaml)
+  - PR for files /terraform/shared|blue|green directory
+
+  Set variables on ci.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+
+Note that this CI does not include the E2E test. Please consider if necessary.
 
 ### Switch Blue/Green
 
-You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/sample.tfvars) and applying it while continuing the service.
+You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/test.tfvars) and applying it while continuing the service.
 
 This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./flux/infrastructure/blue/nginx-values.yaml).
 
@@ -118,7 +147,7 @@ There are [sample app](https://github.com/ToruMakabe/session-checker) and [test 
 
 If you have both Blue and Green joined in the backend, then:
 
-```
+```shell
 % kubectl cluster-info
 Kubernetes control plane is running at https://hoge-aks-anti-dry-green-fuga.hcp.japaneast.azmk8s.io:443
 [snip]
@@ -150,14 +179,14 @@ Requests are distributed across both clusters and multiple pods, but the session
 
 Then, comment out the Service IP of Blue and apply it.
 
-```
+```HCL
 demoapp_svc_ips = {
-  # blue  = "10.0.32.4",
-  green = "10.0.80.4",
+  # blue  = "10.1.33.4",
+  green = "10.1.35.4",
 }
 ```
 
-```
+```shell
 {"count":41,"hostname":"session-checker-76799c4797-wjszz"}
 {"count":42,"hostname":"session-checker-76799c4797-r4blx"}
 {"count":43,"hostname":"session-checker-76799c4797-kc896"}
@@ -177,6 +206,6 @@ Removed the Service IP of Blue without disruption. So, you can destroy the Blue 
 
 ## Notes <a name = "notes"></a>
 
-* Always be aware of the context of which cluster you are currently working on
-  * [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
-  * [zsh-kubectl-prompt](https://github.com/superbrothers/zsh-kubectl-prompt)
+- Always be aware of the context of which cluster you are currently working on
+  - [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
+  - [zsh-kubectl-prompt](https://github.com/superbrothers/zsh-kubectl-prompt)

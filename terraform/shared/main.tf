@@ -1,11 +1,11 @@
 terraform {
-  required_version = "~> 1.0.2"
+  required_version = "~> 1.0.9"
   backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.68.0"
+      version = "~> 2.81.0"
     }
 
     random = {
@@ -33,48 +33,67 @@ resource "azurerm_virtual_network" "default" {
   address_space       = ["10.0.0.0/8"]
 }
 
+resource "azurerm_subnet" "aks_pod_shared" {
+  name                 = "snet-aks-pod-shared"
+  resource_group_name  = azurerm_resource_group.shared.name
+  virtual_network_name = azurerm_virtual_network.default.name
+  address_prefixes     = ["10.0.0.0/16"]
+
+  delegation {
+    name = "aks-delegation"
+
+    service_delegation {
+      name    = "Microsoft.ContainerService/managedClusters"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
+}
+
+// Reserved ranges
+// 10.1.0.0/20 for AKS Service (Blue)
+// 10.1.16.0/20 for AKS Service (Green)
+
 resource "azurerm_subnet" "aks_blue" {
   name                 = "snet-aks-blue"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.0.0/20"]
+  address_prefixes     = ["10.1.32.0/24"]
 }
 
 resource "azurerm_subnet" "aks_blue_svc_lb" {
   name                 = "snet-aks-blue-svc-lb"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.32.0/20"]
-  // 10.0.16.0/20 for svc (allocate by aks)
+  address_prefixes     = ["10.1.33.0/24"]
+
 }
 
 resource "azurerm_subnet" "aks_green" {
   name                 = "snet-aks-green"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.48.0/20"]
+  address_prefixes     = ["10.1.34.0/24"]
 }
 
 resource "azurerm_subnet" "aks_green_svc_lb" {
   name                 = "snet-aks-green-svc-lb"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.80.0/20"]
-  // 10.0.64.0/20 for svc (allocate by aks)
+  address_prefixes     = ["10.1.35.0/24"]
 }
 
 resource "azurerm_subnet" "appgw" {
   name                 = "snet-appgw"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.96.0/24"]
+  address_prefixes     = ["10.1.36.0/24"]
 }
 
 resource "azurerm_subnet" "endpoint" {
   name                                           = "snet-endpoint"
   resource_group_name                            = azurerm_resource_group.shared.name
   virtual_network_name                           = azurerm_virtual_network.default.name
-  address_prefixes                               = ["10.0.97.0/24"]
+  address_prefixes                               = ["10.1.37.0/24"]
   enforce_private_link_endpoint_network_policies = true
 }
 
@@ -82,7 +101,7 @@ resource "azurerm_subnet" "aci" {
   name                 = "snet-aci"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.98.0/24"]
+  address_prefixes     = ["10.1.38.0/24"]
 
   delegation {
     name = "delegation"
@@ -264,17 +283,6 @@ resource "azurerm_key_vault_access_policy" "demoapp_admin" {
       object_id,
     ]
   }
-}
-
-resource "azurerm_key_vault_access_policy" "demoapp_ci_sp" {
-  key_vault_id = azurerm_key_vault.demoapp.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = var.ci_sp_oid
-
-  secret_permissions = [
-    "get",
-    "list",
-  ]
 }
 
 resource "azurerm_key_vault_secret" "demoapp_redis_server" {
