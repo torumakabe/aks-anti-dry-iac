@@ -11,6 +11,7 @@ variable "aks_rg" {
 
 variable "aks_network" {
   type = object({
+    pod_subnet_id    = string
     subnet_id        = string
     subnet_svc_lb_id = string
   })
@@ -29,10 +30,3 @@ variable "demoapp" {
   })
   sensitive = true
 }
-
-# Optional: If you need to run 'terraform plan' for exsiting AKS cluster in CI. (Non-immutable)
-/*
-variable "ci_sp_oid" {
-  type = string
-}
-*/

@@ -1,16 +1,16 @@
 terraform {
-  required_version = "~> 1.0.2"
+  required_version = "~> 1.0.9"
   backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.68.0"
+      version = "~> 2.81.0"
     }
 
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.3"
+      version = "~> 2.6"
     }
   }
 }
@@ -25,7 +25,7 @@ data "azurerm_client_config" "current" {}
 /*
 data "azurerm_kubernetes_service_versions" "current" {
   location        = var.aks_rg.location
-  version_prefix  = "1.20"
+  version_prefix  = "1.22"
   include_preview = false
 }
 */
@@ -91,7 +91,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   name = local.aks_cluster_name
   # Optional: To keep up with the latest version
   # kubernetes_version  = data.azurerm_kubernetes_service_versions.current.latest_version
-  kubernetes_version  = "1.20.5"
+  kubernetes_version  = "1.22.2"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   node_resource_group = "${azurerm_resource_group.aks.name}-node"
@@ -103,16 +103,18 @@ resource "azurerm_kubernetes_cluster" "main" {
     type = "VirtualMachineScaleSets"
     # Optional: To keep up with the latest version
     # orchestrator_version  = data.azurerm_kubernetes_service_versions.current.latest_version
-    orchestrator_version         = "1.20.5"
+    orchestrator_version         = "1.22.2"
     vnet_subnet_id               = var.aks_network.subnet_id
+    pod_subnet_id                = var.aks_network.pod_subnet_id
     availability_zones           = [1, 2, 3]
     node_count                   = 3
-    max_pods                     = 100
-    vm_size                      = "Standard_F2s_v2"
+    vm_size                      = "Standard_D2ds_v4"
     only_critical_addons_enabled = false
 
     os_disk_size_gb = 30
     os_disk_type    = "Ephemeral"
+    os_sku          = "Ubuntu"
+    # os_sku = "CBLMariner"
   }
 
   identity {
@@ -134,8 +136,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     network_plugin = "azure"
     network_policy = "calico"
     network_mode   = "transparent"
-    service_cidr   = "10.0.16.0/20"
-    dns_service_ip = "10.0.16.10"
+    service_cidr   = "10.1.0.0/20"
+    dns_service_ip = "10.1.0.10"
     // Unnecessary it now practically, but for passing validation of terraform
     docker_bridge_cidr = "172.17.0.1/16"
 
@@ -161,18 +163,10 @@ resource "azurerm_kubernetes_cluster" "main" {
   lifecycle {
     ignore_changes = [
       addon_profile,
+      default_node_pool[0].node_labels,
     ]
   }
 }
-
-# Optional: If you need to run 'terraform plan' for exsiting AKS cluster in CI. (Non-immutable)
-/*
-resource "azurerm_role_assignment" "aks_admin_ci_sp" {
-  scope                = azurerm_kubernetes_cluster.main.id
-  role_definition_name = "Azure Kubernetes Service Cluster Admin Role"
-  principal_id         = var.ci_sp_oid
-}
-*/
 
 resource "azurerm_role_assignment" "aks_metrics" {
   scope                = azurerm_kubernetes_cluster.main.id

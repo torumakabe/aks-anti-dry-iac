@@ -3,10 +3,10 @@
 
 prefix = "your-prefix"
 shared_rg = {
-  name     = "rg-aks-anti-dry-shared"
+  name     = "rg-aks-anti-dry-shared-test"
   location = "japaneast"
 }
 demoapp_svc_ips = {
-  # blue  = "10.1.33.4",
-  # green = "10.1.35.4",
+  blue  = "10.1.33.4",
+  green = "10.1.35.4",
 }

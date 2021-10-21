@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 APPGW_FE=your-agw-frontend-hostname-or-ip
 

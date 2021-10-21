@@ -27,8 +27,7 @@ jobs:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.0.2
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_version: 1.0.9
 
       - name: "Terraform Format"
         id: fmt
@@ -37,33 +36,49 @@ jobs:
 
       - name: "Terraform Init"
         id: init
-        working-directory: ./terraform/shared
-        run: terraform init -backend-config=backend.hcl
+        working-directory: ./test/fixtures/shared
+        run: terraform init -backend=false
+
+      - name: "Setup TFLint"
+        uses: terraform-linters/setup-tflint@v1
+        with:
+          tflint_version: v0.32.1
+
+      - name: "Init TFLint"
+        working-directory: "./test/fixtures/shared"
+        run: tflint --init
+
+      - name: "Run TFLint"
+        id: tflint
+        working-directory: "./test/fixtures/shared"
+        run: tflint -f compact --module --var-file=ci.tfvars
+        # Exit this job if tflint fails
 
       - name: "Terraform Validate"
         id: validate
-        working-directory: ./terraform/shared
+        working-directory: ./test/fixtures/shared
         run: terraform validate -no-color
 
       - name: "Terraform Plan"
         id: plan
-        working-directory: ./terraform/shared
-        run: terraform plan -var-file=sample.tfvars -no-color
+        working-directory: ./test/fixtures/shared
+        run: terraform plan -var-file=ci.tfvars -no-color
         continue-on-error: true
-
 
       - name: "Create comment for PR (Terraform fmt/validate/plan)"
         uses: actions/github-script@v4
         env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+          PLAN: "${{ steps.plan.outputs.stdout }}\n${{ steps.plan.outputs.stderr }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const output = `#### Check Terraform files (Shared)
             #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            </details>
 
             <details><summary>Show Plan</summary>
 
@@ -81,4 +96,3 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
