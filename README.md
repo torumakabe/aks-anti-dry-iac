@@ -78,7 +78,7 @@ You have to prepare the following variables.
 - Azure Resources (Shared): [Terraform tfvars](./terraform/shared/sample.tfvars)
 - Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/sample.tfvars)
 - Kubernetes Resources (Blue/Green):
-  - [Flux helper script](./flux/scripts/bootstrap.sh)
+  - [GitHub variables for Flux helper script](./flux/scripts/bootstrap.sh)
   - [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
 
 You can also [use environment variables](https://www.terraform.io/docs/language/values/variables.html) instead of tfvars file.
