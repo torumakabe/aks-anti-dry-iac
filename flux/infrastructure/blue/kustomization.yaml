@@ -4,4 +4,4 @@ resources:
   - ../base
 patchesStrategicMerge:
   - nginx-values.yaml
-  - csi-secrets-store-provider-azure-values.yaml
+  - chaos-mesh-values.yaml

@@ -1,8 +1,10 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http/cookiejar"
@@ -13,8 +15,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
 	"github.com/hashicorp/terraform-exec/tfexec"
-	"github.com/hashicorp/terraform-exec/tfinstall"
 )
 
 type ResponseBodyIncr struct {
@@ -22,27 +26,104 @@ type ResponseBodyIncr struct {
 	Hostname string `json:"hostname"`
 }
 
-func TestE2EBlue(t *testing.T) {
+var (
+	scope      = flag.String("scope", "all", "specify target cluster [blue/green/all]")
+	tfVer      = flag.String("tf-version", "1.1.7", "specify Terraform version")
+	fluxURL    = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
+	fluxBranch = flag.String("flux-branch", "", "specify Flux branch")
+)
+
+func init() {
+	testing.Init()
+	flag.Parse()
+}
+
+func TestE2E(t *testing.T) {
 	err := checkEnv(t)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	var targets []string
+	switch *scope {
+	case "blue":
+		targets = append(targets, "blue")
+	case "green":
+		targets = append(targets, "green")
+	case "all":
+		targets = append(targets, "blue", "green")
+	default:
+		t.Fatalf("Please specify [blue/green/all] as scope")
+	}
+
+	execPath, err := installTF(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Cleanup(func() {
+		t.Log("Destroying shared infrastructure...")
+		err = destroyShared(t, "../fixtures/shared", execPath, "./e2e.tfvars")
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	t.Log("Setting up shared infrastructure...")
-	endpoint, err := setupShared(t, "../fixtures/shared", "./test.tfvars")
+	endpoint, err := setupShared(t, "../fixtures/shared", execPath, "./e2e.tfvars")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("\nendpoint: %s", endpoint)
 
-	t.Log("Setting up AKS cluster (blue)...")
-	err = setupAKS(t, "../fixtures/blue", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
+	t.Cleanup(func() {
+		// destroy AKS cluster in parallel
+		t.Run("destroyAKS", func(t *testing.T) {
+			for _, target := range targets {
+				target := target
+				tn := fmt.Sprintf("destroy%s", target)
+				wd := fmt.Sprintf("../fixtures/%s", target)
+				t.Run(tn, func(t *testing.T) {
+					t.Logf("Destroying AKS cluster (%s)...", target)
+					err = destroyAKS(t, wd, execPath, "./e2e.tfvars")
+					if err != nil {
+						t.Fatal(err)
+					}
+				})
+			}
+		})
+	})
+
+	// setup AKS cluster in parallel
+	s := t.Run("setupAKS", func(t *testing.T) {
+		for _, target := range targets {
+			target := target
+			tn := fmt.Sprintf("setup%s", target)
+			wd := fmt.Sprintf("../fixtures/%s", target)
+			s := t.Run(tn, func(t *testing.T) {
+				t.Logf("Setting up AKS cluster (%s)...", target)
+				err = setupAKS(t, wd, execPath, "./e2e.tfvars")
+				if err != nil {
+					t.Error(err)
+				}
+			})
+			if !s {
+				t.Errorf("Setting up AKS cluster (%s) failed", target)
+			}
+		}
+	})
+
+	if !s {
+		t.Fatal("Setting up AKS cluster failed")
+	}
+
+	cardinarity := 4
+	if *scope != "all" {
+		cardinarity = 2
 	}
 
 	t.Log("Testing endpoint...")
-	err = testEndpoint(t, endpoint, 2, 100, true)
+	err = testEndpoint(t, endpoint, cardinarity, 100, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,68 +131,7 @@ func TestE2EBlue(t *testing.T) {
 	t.Log("Testing completed.")
 }
 
-func TestE2EGreen(t *testing.T) {
-	err := checkEnv(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Setting up shared infrastructure...")
-	endpoint, err := setupShared(t, "../fixtures/shared", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("\nendpoint: %s", endpoint)
-
-	t.Log("Setting up AKS cluster (green)...")
-	err = setupAKS(t, "../fixtures/green", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Testing endpoint...")
-	err = testEndpoint(t, endpoint, 2, 100, true)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Log("Testing completed.")
-}
-
-func TestE2EAll(t *testing.T) {
-	err := checkEnv(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Setting up shared infrastructure...")
-	endpoint, err := setupShared(t, "../fixtures/shared", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("\nendpoint: %s", endpoint)
-
-	t.Log("Setting up AKS cluster (blue)...")
-	err = setupAKS(t, "../fixtures/blue", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Setting up AKS cluster (green)...")
-	err = setupAKS(t, "../fixtures/green", "./test.tfvars")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Testing endpoint...")
-	err = testEndpoint(t, endpoint, 4, 100, true)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Log("Testing completed.")
-}
-
+// checkEnv chcek environment variables for Flux
 func checkEnv(t *testing.T) error {
 	t.Helper()
 	gh_token := os.Getenv("GITHUB_TOKEN")
@@ -127,40 +147,39 @@ func checkEnv(t *testing.T) error {
 	return nil
 }
 
-func setupShared(t *testing.T, workingDir, varFile string) (string, error) {
+func installTF(t *testing.T) (string, error) {
 	t.Helper()
-	tmpDir, err := ioutil.TempDir("", "tfinstall")
-	if err != nil {
-		return "", err
-	}
-	t.Cleanup(func() { os.RemoveAll(tmpDir) })
 
-	ctx := context.Background()
-	latestVersion := tfinstall.LatestVersion(tmpDir, false)
-	execPath, err := tfinstall.Find(ctx, latestVersion)
+	installer := &releases.ExactVersion{
+		Product: product.Terraform,
+		Version: version.Must(version.NewVersion(*tfVer)),
+	}
+	t.Cleanup(func() {
+		installer.Remove(context.Background())
+	})
+
+	execPath, err := installer.Install(context.Background())
 	if err != nil {
 		return "", err
 	}
+
+	return execPath, nil
+}
+
+func setupShared(t *testing.T, workingDir, execPath, varFile string) (string, error) {
+	t.Helper()
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
 		return "", err
 	}
 
-	err = tf.Init(ctx, tfexec.Upgrade(true))
+	err = tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
 		return "", err
 	}
 
-	t.Cleanup(func() {
-		t.Log("Destroying shared infrastructure...")
-		err = tf.Destroy(ctx, tfexec.VarFile(varFile))
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-	err = tf.Apply(ctx, tfexec.VarFile(varFile))
+	err = tf.Apply(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
 		return "", err
 	}
@@ -170,46 +189,43 @@ func setupShared(t *testing.T, workingDir, varFile string) (string, error) {
 		return "", err
 	}
 
-	return state.Values.Outputs["demoapp_endpoint_ip"].Value.(string), nil
+	return state.Values.Outputs["demoapp_public_endpoint_ip"].Value.(string), nil
 }
 
-func setupAKS(t *testing.T, workingDir, varFile string) error {
+func destroyShared(t *testing.T, workingDir, execPath, varFile string) error {
 	t.Helper()
-	sl := strings.Split(workingDir, "/")
-	clusterSwitch := sl[len(sl)-1]
-
-	tmpDir, err := ioutil.TempDir("", "tfinstall")
-	if err != nil {
-		return err
-	}
-	t.Cleanup(func() { os.RemoveAll(tmpDir) })
-
-	ctx := context.Background()
-	latestVersion := tfinstall.LatestVersion(tmpDir, false)
-	execPath, err := tfinstall.Find(ctx, latestVersion)
-	if err != nil {
-		return err
-	}
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
 		return err
 	}
 
-	err = tf.Init(ctx, tfexec.Upgrade(true))
+	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
+	if err != nil {
+		t.Error(err)
+	}
+
+	return nil
+}
+
+func setupAKS(t *testing.T, workingDir, execPath, varFile string) error {
+	t.Helper()
+	t.Parallel()
+
+	sl := strings.Split(workingDir, "/")
+	clusterSwitch := sl[len(sl)-1]
+
+	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
 		return err
 	}
 
-	t.Cleanup(func() {
-		t.Logf("Destroying AKS cluster: %s...", clusterSwitch)
-		err = tf.Destroy(ctx, tfexec.VarFile(varFile))
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	err = tf.Init(context.Background(), tfexec.Upgrade(true))
+	if err != nil {
+		return err
+	}
 
-	err = tf.Apply(ctx, tfexec.VarFile(varFile))
+	err = tf.Apply(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
 		return err
 	}
@@ -222,23 +238,35 @@ func setupAKS(t *testing.T, workingDir, varFile string) error {
 	rgName := state.Values.Outputs["resource_group_name"].Value.(string)
 	clusterName := state.Values.Outputs["aks_cluster_name"].Value.(string)
 
-	bsScriptPath := "../../flux/scripts/bootstrap.sh"
-	cmd := exec.Command(bsScriptPath, clusterSwitch, rgName, clusterName)
+	bsScriptPath := "../scripts/setup-flux.sh"
+	cmd := exec.Command(bsScriptPath, clusterSwitch, rgName, clusterName, *fluxURL, *fluxBranch)
 	cmd.Env = os.Environ()
+	var outb, errb bytes.Buffer
+	cmd.Stdout = &outb
+	cmd.Stderr = &errb
 	err = cmd.Run()
+	if err != nil {
+		t.Log(outb.String())
+		t.Log(errb.String())
+		return err
+	}
+
+	return nil
+}
+
+func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
+	t.Helper()
+	t.Parallel()
+
+	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
 		return err
 	}
 
-	t.Cleanup(func() {
-		ucScriptPath := "../../flux/scripts/usecontext.sh"
-		cmd := exec.Command(ucScriptPath, rgName, clusterName)
-		cmd.Env = os.Environ()
-		err = cmd.Run()
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
+	if err != nil {
+		t.Error(err)
+	}
 
 	return nil
 }

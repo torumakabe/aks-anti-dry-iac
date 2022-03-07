@@ -38,7 +38,7 @@ jobs:
           echo "::set-output name=DIFF_LOG::$DIFF_LOG"
 
       - name: "Create comment for PR (diff Terraform files between Blue & Green)"
-        uses: actions/github-script@v4
+        uses: actions/github-script@v5
         env:
           DIFF: "${{ steps.diff.outputs.DIFF_LOG }}"
         with:
@@ -56,7 +56,7 @@ jobs:
 
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -66,46 +66,42 @@ jobs:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 1.0.9
+          terraform_version: 1.1.7
 
       - name: "Terraform Format"
         id: fmt
-        working-directory: ./terraform/green
-        run: terraform fmt -check
+        working-directory: ./test/integration
+        run: make format-check-green
 
       - name: "Terraform Init"
         id: init
-        working-directory: ./test/fixtures/green
-        run: terraform init -backend=false
+        working-directory: ./test/integration
+        run: make init-green
 
       - name: "Setup TFLint"
         uses: terraform-linters/setup-tflint@v1
         with:
-          tflint_version: v0.32.1
-
-      - name: "Init TFLint"
-        working-directory: "./test/fixtures/green"
-        run: tflint --init
+          tflint_version: v0.34.1
 
       - name: "Run TFLint"
         id: tflint
-        working-directory: "./test/fixtures/green"
-        run: tflint -f compact --module --var-file=ci.tfvars
+        working-directory: ./test/integration
+        run: make lint-green
         # Exit this job if tflint fails
 
       - name: "Terraform Validate"
         id: validate
-        working-directory: ./test/fixtures/green
-        run: terraform validate -no-color
+        working-directory: ./test/integration
+        run: make validate-green
 
       - name: "Terraform Plan"
         id: plan
-        working-directory: ./test/fixtures/green
-        run: terraform plan -var-file=ci.tfvars -no-color
+        working-directory: ./test/integration
+        run: make plan-green
         continue-on-error: true
 
-      - name: "Create comment for PR (Terraform fmt/validate/plan)"
-        uses: actions/github-script@v4
+      - name: "Create comment for PR (Terraform fmt/init/validate/plan)"
+        uses: actions/github-script@v5
         env:
           PLAN: "${{ steps.plan.outputs.stdout }}\n${{ steps.plan.outputs.stderr }}"
         with:
@@ -114,6 +110,7 @@ jobs:
             const output = `#### Check Terraform files (Green)
             #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### TFLint 👓\`${{ steps.tflint.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
@@ -129,7 +126,7 @@ jobs:
 
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-            github.issues.createComment({
+            github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

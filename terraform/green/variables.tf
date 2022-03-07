@@ -2,31 +2,46 @@ variable "prefix" {
   type = string
 }
 
-variable "aks_rg" {
-  type = object({
-    name     = string
-    location = string
-  })
+variable "suffix" {
+  type = string
 }
 
-variable "aks_network" {
+variable "aks" {
   type = object({
-    pod_subnet_id    = string
-    subnet_id        = string
-    subnet_svc_lb_id = string
+    switch = string
+    rg = object({
+      location = string
+    })
+    node_pool = object({
+      system = object({
+        node_count = number
+      })
+      user = object({
+        node_count = number
+      })
+    })
+    aad = object({
+      admin_group_object_ids = list(string)
+    })
   })
 }
 
 variable "log_analytics" {
   type = object({
-    workspace_id = string
+    workspace = object({
+      name    = string
+      rg_name = string
+    })
   })
-  sensitive = true
 }
 
 variable "demoapp" {
   type = object({
-    key_vault_id = string
+    ingress_svc = object({
+      ip = string # Specify IP address in service LB subnet you want to assign to the demo app's Ingress service
+    })
+    key_vault = object({
+      name_body = string
+    })
   })
-  sensitive = true
 }

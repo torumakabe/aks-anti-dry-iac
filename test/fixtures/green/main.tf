@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.0.9"
+  required_version = "~> 1.1.7"
 }
 
 module "green" {
   source        = "../../../terraform/green"
   prefix        = var.prefix
-  aks_rg        = var.aks_rg
-  aks_network   = var.aks_network
+  suffix        = var.suffix
+  aks           = var.aks
   log_analytics = var.log_analytics
   demoapp       = var.demoapp
 }

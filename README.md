@@ -27,11 +27,11 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 ## Prerequisites & Tested <a name = "prerequisites"></a>
 
-- [Terraform](https://www.terraform.io/docs/index.html): 1.0.9
-  - hashicorp/azurerm: 2.81
-  - hashicorp/kubernetes: 2.6
+- [Terraform](https://www.terraform.io/docs/index.html): 1.1.7
+  - hashicorp/azurerm: 2.98
+  - hashicorp/kubernetes: 2.8
   - State store: Local
-- [Flux(v2)](https://fluxcd.io/docs/): 0.19.0
+- [Flux(v2)](https://fluxcd.io/docs/): 0.27.3
 
 ### Privileges required for execution
 
@@ -57,29 +57,28 @@ The policy of this sample for variables such as IDs and secrets is as follows.
 - Operate in a private repository
 - Static IDs like Azure resource IDs can be written in the source code
   - To clarify the operation target and share it with the team as code
+  - On the other hand, avoid hard code the entire ID as much as possible
+    - Take advantage of Terraform interpolation and Flux substitution
   - Code encryption on repo is sometimes overkilling and complex procedures can trigger accidents
 - Secrets and values generated without regularity not written in the source code
   - use Secret Store
     - Azure Key Vault and Secret Store CSI Driver
       - Create and inject automatically on this sample (Redis password for sample app)
-        - Create secret and [store to Key Vault](https://github.com/ToruMakabe/aks-anti-dry-iac/blob/main/terraform/shared/main.tf#L297)
-        - [Pass](https://github.com/ToruMakabe/aks-anti-dry-iac/blob/main/terraform/blue/main.tf#L393) Azure AD Tenant ID and kubelet Managed ID to AKS as Kubernetes ConfigMap for Secret Store CSI Driver
-        - Kustomize [SecretProviderClass](./flux/apps/base/session-checker/secret-provider-class.yaml) manifest [with ConfigMap](./flux/clusters/blue/apps.yaml)
-        - Pass Secret to sample app [as environment variable](./flux/apps/base/session-checker/deployment.yaml)
+        - Create secret and [store to Key Vault](./terraform/shared/main.tf)
+        - [Pass](./terraform/blue/kubernetes-config/main.tf) configs like Azure AD Tenant ID to AKS as Kubernetes ConfigMap
+        - Kustomize [SecretProviderClass](./flux/apps/base/demoapp/secret-provider-class.yaml) manifest [with ConfigMap and Flux substitution](./flux/clusters/blue/apps.yaml)
+        - Pass Secret to sample app [as environment variable](./flux/apps/base/demoapp/deployment.yaml)
     - GitHub Secret
-      - For CI
+      - [For CI](./.github/workflows/ci-terraform-blue.yaml)
         - ARM_TENANT_ID: Azure AD Tenant ID
         - ARM_SUBSCRIPTION_ID: Azure Subscription ID
         - ARM_CLIENT_ID: Service Principal Client ID
         - ARM_CLIENT_SECRET: Service Principal Client Secret
 
-You have to prepare the following variables.
+You have to prepare the following variables for each envs(e.g dev, prod).
 
-- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/sample.tfvars)
-- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/sample.tfvars)
-- Kubernetes Resources (Blue/Green):
-  - [GitHub variables for Flux helper script](./flux/scripts/bootstrap.sh)
-  - [SecretProviderClass manifest (keyvaultName)](./flux/apps/base/session-checker/secret-provider-class.yaml)
+- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/dev.tfvars)
+- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/dev.tfvars)
 
 You can also [use environment variables](https://www.terraform.io/docs/language/values/variables.html) instead of tfvars file.
 
@@ -87,27 +86,31 @@ You can also [use environment variables](https://www.terraform.io/docs/language/
 
 1. Azure Resources (Shared): [Terraform dir](./terraform/shared)
 2. Azure Resources (Blue/Green): [Terraform dir](./terraform/blue)
-3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts/bootstrap.sh)
+3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts)
+
+- [For Production](./flux/scripts/bootstrap.sh)
+- [For Dev (without storing its manifests in a Git repository)](./flux/scripts/setup-dev.sh)
 
 You can operate Blue/Green in any order, but always be aware of the context of clusters.
 
 ### Test
 
-This repo have two types of test.
+This repo have two types of test. The concept is based on Microsoft documentation.
 
-#### Unit
+> [Testing Terraform code](https://docs.microsoft.com/en-us/azure/developer/terraform/best-practices-testing-overview)
 
-Unit test should be run frequently to detect minor errors early. So, unit test of this repo
+#### Integration
 
-- In this test, 'unit' is a execution unit(state) of Terraform.
+Integration test should be run frequently to detect minor errors early. So, integration test of this repo
+
 - Focus on format, static check and test that finish in a short time
   - terraform fmt, validate
   - TFLint
   - terraform plan (from Go test program)
 - Feel free to run
-  - Just run ["make test"](./test/unit/Makefile)
+  - Just run ["make test"](./test/integration/Makefile)
 
-Set variables on test.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+Set variables on integration.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
 
 #### E2E
 
@@ -128,20 +131,20 @@ Pull Requests trigger the following GitHub Actions as CI. These actions post the
 
 - diff between Blue/Green Flux files: [Github Actions workflow](./.github/workflows/ci-flux.yaml)
   - PR for files /flux directory
-- diff between Blue/Green Terrarform files, and format/validate: [Github Actions workflow](./.github/workflows/ci-terraform-blue.yaml)
+- diff between Blue/Green Terrarform files: [Github Actions workflow](./.github/workflows/ci-terraform-blue.yaml)
   - PR for files /terraform/blue|green directory
-- format(check)/lint/validate/plan Terraform files: [Github Actions workflow](./.github/workflows/ci-terraform-shared.yaml)
+- format(check)/validate/lint/plan Terraform files: [Github Actions workflow](./.github/workflows/ci-terraform-shared.yaml)
   - PR for files /terraform/shared|blue|green directory
 
-  Set variables on ci.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+  Set variables on integration.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
 
 Note that this CI does not include the E2E test. Please consider if necessary.
 
 ### Switch Blue/Green
 
-You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/sample.tfvars) and applying it while continuing the service.
+You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/dev.tfvars) and applying it while continuing the service.
 
-This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./flux/infrastructure/blue/nginx-values.yaml).
+This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./terraform/blue/dev.tfvars).
 
 There are [sample app](https://github.com/ToruMakabe/session-checker) and [test script](./test/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
 
