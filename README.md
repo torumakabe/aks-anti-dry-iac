@@ -104,9 +104,8 @@ This repo have two types of test. The concept is based on Microsoft documentatio
 Integration test should be run frequently to detect minor errors early. So, integration test of this repo
 
 - Focus on format, static check and test that finish in a short time
-  - terraform fmt, validate
+  - terraform fmt, validate, plan
   - TFLint
-  - terraform plan (from Go test program)
 - Feel free to run
   - Just run ["make test"](./test/integration/Makefile)
 
@@ -123,7 +122,7 @@ E2E test should also be automated and always ready to run to see the impact of i
   - Just run ["make test"](./test/e2e/Makefile)
   - Cleanup the resources after test automatically
 
-Set variables on test.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
+Set variables on e2e.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
   
 ### CI
 
