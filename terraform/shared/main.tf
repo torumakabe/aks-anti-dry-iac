@@ -1,11 +1,12 @@
 terraform {
-  required_version = "~> 1.0.9"
-  backend "remote" {}
+  required_version = "~> 1.1.7"
+  # Choose the backend according to your requirements
+  # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.81.0"
+      version = "~> 2.98.0"
     }
 
     random = {
@@ -15,29 +16,67 @@ terraform {
   }
 }
 
+module "subnet_addrs" {
+  source = "hashicorp/subnets/cidr"
+
+  base_cidr_block = local.subnet_addrs.base_cidr_block
+  networks = [
+    {
+      name     = "aks_pod_shared"
+      new_bits = 2
+    },
+    {
+      name     = "aks_blue_node"
+      new_bits = 8
+    },
+    {
+      name     = "aks_blue_svc_lb"
+      new_bits = 8
+    },
+    {
+      name     = "aks_green_node"
+      new_bits = 8
+    },
+    {
+      name     = "aks_green_svc_lb"
+      new_bits = 8
+    },
+    {
+      name     = "appgw"
+      new_bits = 8
+    },
+    {
+      name     = "endpoint"
+      new_bits = 8
+    },
+    {
+      name     = "aci"
+      new_bits = 8
+    },
+  ]
+}
+
 provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "current" {}
-
 resource "azurerm_resource_group" "shared" {
-  name     = var.shared_rg.name
-  location = var.shared_rg.location
+  name     = local.shared_rg.name
+  location = local.shared_rg.location
 }
 
 resource "azurerm_virtual_network" "default" {
   name                = "vnet-default"
   resource_group_name = azurerm_resource_group.shared.name
   location            = azurerm_resource_group.shared.location
-  address_space       = ["10.0.0.0/8"]
+  address_space       = [module.subnet_addrs.base_cidr_block]
 }
 
 resource "azurerm_subnet" "aks_pod_shared" {
   name                 = "snet-aks-pod-shared"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.0.0.0/16"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_pod_shared"]]
 
   delegation {
     name = "aks-delegation"
@@ -49,51 +88,47 @@ resource "azurerm_subnet" "aks_pod_shared" {
   }
 }
 
-// Reserved ranges
-// 10.1.0.0/20 for AKS Service (Blue)
-// 10.1.16.0/20 for AKS Service (Green)
-
-resource "azurerm_subnet" "aks_blue" {
-  name                 = "snet-aks-blue"
+resource "azurerm_subnet" "aks_blue_node" {
+  name                 = "snet-aks-blue-node"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.32.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_blue_node"]]
 }
 
 resource "azurerm_subnet" "aks_blue_svc_lb" {
   name                 = "snet-aks-blue-svc-lb"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.33.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_blue_svc_lb"]]
 
 }
 
-resource "azurerm_subnet" "aks_green" {
-  name                 = "snet-aks-green"
+resource "azurerm_subnet" "aks_green_node" {
+  name                 = "snet-aks-green-node"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.34.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_green_node"]]
 }
 
 resource "azurerm_subnet" "aks_green_svc_lb" {
   name                 = "snet-aks-green-svc-lb"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.35.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_green_svc_lb"]]
 }
 
 resource "azurerm_subnet" "appgw" {
   name                 = "snet-appgw"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.36.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["appgw"]]
 }
 
 resource "azurerm_subnet" "endpoint" {
   name                                           = "snet-endpoint"
   resource_group_name                            = azurerm_resource_group.shared.name
   virtual_network_name                           = azurerm_virtual_network.default.name
-  address_prefixes                               = ["10.1.37.0/24"]
+  address_prefixes                               = [module.subnet_addrs.network_cidr_blocks["endpoint"]]
   enforce_private_link_endpoint_network_policies = true
 }
 
@@ -101,7 +136,7 @@ resource "azurerm_subnet" "aci" {
   name                 = "snet-aci"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = ["10.1.38.0/24"]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aci"]]
 
   delegation {
     name = "delegation"
@@ -147,6 +182,8 @@ resource "azurerm_application_gateway" "shared" {
     capacity = 2
   }
 
+  zones = [1, 2, 3]
+
   gateway_ip_configuration {
     name      = local.agw_settings.gateway_ip_configuration_name
     subnet_id = azurerm_subnet.appgw.id
@@ -163,12 +200,12 @@ resource "azurerm_application_gateway" "shared" {
   }
 
   backend_address_pool {
-    name         = local.agw_settings.backend_address_pool_name
-    ip_addresses = local.agw_settings.backend_ip_addresses
+    name         = local.demoapp.agw_settings.backend_address_pool_name
+    ip_addresses = local.demoapp.agw_settings.backend_ip_addresses
   }
 
   backend_http_settings {
-    name                  = local.agw_settings.http_setting_name
+    name                  = local.demoapp.agw_settings.http_setting_name
     cookie_based_affinity = "Disabled"
     path                  = "/"
     port                  = 80
@@ -181,18 +218,18 @@ resource "azurerm_application_gateway" "shared" {
   }
 
   http_listener {
-    name                           = local.agw_settings.listener_name
+    name                           = local.demoapp.agw_settings.listener_name
     frontend_ip_configuration_name = local.agw_settings.frontend_ip_configuration_name
     frontend_port_name             = local.agw_settings.frontend_port_name
     protocol                       = "Http"
   }
 
   request_routing_rule {
-    name                       = local.agw_settings.request_routing_rule_name
+    name                       = local.demoapp.agw_settings.request_routing_rule_name
     rule_type                  = "Basic"
-    http_listener_name         = local.agw_settings.listener_name
-    backend_address_pool_name  = local.agw_settings.backend_address_pool_name
-    backend_http_settings_name = local.agw_settings.http_setting_name
+    http_listener_name         = local.demoapp.agw_settings.listener_name
+    backend_address_pool_name  = local.demoapp.agw_settings.backend_address_pool_name
+    backend_http_settings_name = local.demoapp.agw_settings.http_setting_name
   }
 }
 
@@ -217,7 +254,7 @@ resource "azurerm_container_group" "demoapp_redis" {
 
   container {
     name   = "redis"
-    image  = "bitnami/redis:6.2.4"
+    image  = "bitnami/redis:6.2.6"
     cpu    = "1.0"
     memory = "1.0"
 
@@ -254,17 +291,17 @@ resource "azurerm_private_dns_a_record" "demoapp_redis" {
 }
 
 resource "azurerm_key_vault" "demoapp" {
-  name                = "${var.prefix}-kv-demoapp"
+  name                = local.demoapp.key_vault.name
   location            = azurerm_resource_group.shared.location
   resource_group_name = azurerm_resource_group.shared.name
-  tenant_id           = data.azurerm_client_config.current.tenant_id
+  tenant_id           = local.tenant_id
   sku_name            = "standard"
 }
 
 resource "azurerm_key_vault_access_policy" "demoapp_admin" {
   key_vault_id = azurerm_key_vault.demoapp.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azurerm_client_config.current.object_id
+  tenant_id    = local.tenant_id
+  object_id    = local.current_client.object_id
 
   secret_permissions = [
     "backup",
@@ -334,3 +371,42 @@ resource "azurerm_private_endpoint" "demoapp_kv" {
     is_manual_connection           = false
   }
 }
+
+data "azurerm_policy_definition" "k8s_container_no_privilege" {
+  name = "95edb821-ddaf-4404-9732-666045e056b4"
+}
+
+/* Just a sample of Azure Policy assignment. It is recommended to assign it in the management group to take advantage of inheritance and avoid duplicate assignments in the subscription.
+
+resource "azurerm_subscription_policy_assignment" "k8s_container_no_privilege" {
+  name                 = "k8s-container-no-privilege"
+  policy_definition_id = data.azurerm_policy_definition.k8s_container_no_privilege.id
+  subscription_id      = local.current_client.subscription_id
+
+  parameters = <<PARAMETERS
+    {
+      "effect": {
+        "value": "deny"
+      },
+      "excludedNamespaces": {
+        "value":
+        [
+          "kube-system",
+          "gatekeeper-system",
+          "chaos-testing",
+          "azure-arc"
+        ]
+      },
+      "namespaces": {
+        "value": []
+      },
+      "labelSelector": {
+        "value": {}
+      },
+      "excludedContainers": {
+        "value": []
+      }
+    }
+PARAMETERS
+}
+*/

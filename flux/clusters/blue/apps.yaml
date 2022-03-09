@@ -1,4 +1,4 @@
-apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
   name: apps
@@ -16,8 +16,8 @@ spec:
   healthChecks:
     - kind: Deployment
       name: session-checker
-      namespace: session-checker
+      namespace: demoapp
   postBuild:
     substituteFrom:
       - kind: ConfigMap
-        name: ids
+        name: flux-configs

@@ -6,7 +6,7 @@ spec:
   chart:
     spec:
       chart: ingress-nginx
-      version: "4.0.6"
+      version: "4.0.17"
   # Default values
   # https://github.com/kubernetes/ingress-nginx/blob/master/charts/ingress-nginx/values.yaml
   values:
@@ -14,9 +14,9 @@ spec:
       service:
         annotations:
           service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-          service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "snet-aks-green-svc-lb"
+          service.beta.kubernetes.io/azure-load-balancer-internal-subnet: ${demoapp_ingress_svc_subnet}
         type: LoadBalancer
-        loadBalancerIP: 10.1.35.4
+        loadBalancerIP: ${demoapp_ingress_svc_ip}
         externalTrafficPolicy: Local
       config:
         use-forwarded-headers: "true"

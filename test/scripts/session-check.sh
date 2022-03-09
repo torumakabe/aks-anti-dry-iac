@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-APPGW_FE=your-agw-frontend-hostname-or-ip
+APPGW_FE=$1
 
 http_err_counter=0
 

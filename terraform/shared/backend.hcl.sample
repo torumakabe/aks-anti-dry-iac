@@ -1,0 +1,3 @@
+workspaces { name = "aks-anti-dry-iac-shared-prod" }
+hostname     = "app.terraform.io"
+organization = "your-org"

@@ -1,4 +1,4 @@
-apiVersion: kustomize.toolkit.fluxcd.io/v1beta1
+apiVersion: kustomize.toolkit.fluxcd.io/v1beta2
 kind: Kustomization
 metadata:
   name: infrastructure
@@ -12,11 +12,15 @@ spec:
   prune: true
   validation: client
   healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v1beta1
+    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
       kind: HelmRelease
       name: nginx
       namespace: nginx
-    - apiVersion: helm.toolkit.fluxcd.io/v1beta1
+    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
       kind: HelmRelease
-      name: csi-secrets-store-provider-azure
-      namespace: kube-system
+      name: chaos-mesh
+      namespace: chaos-testing
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: flux-configs

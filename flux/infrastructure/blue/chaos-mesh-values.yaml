@@ -1,0 +1,11 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: chaos-mesh
+spec:
+  chart:
+    spec:
+      chart: chaos-mesh
+      version: "2.1.3"
+  # Default values
+  # https://github.com/chaos-mesh/chaos-mesh/blob/master/helm/chaos-mesh/values.yaml
