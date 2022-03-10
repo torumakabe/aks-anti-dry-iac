@@ -296,6 +296,11 @@ resource "azurerm_key_vault" "demoapp" {
   resource_group_name = azurerm_resource_group.shared.name
   tenant_id           = local.tenant_id
   sku_name            = "standard"
+
+  network_acls {
+    bypass         = "None"
+    default_action = "Deny"
+  }
 }
 
 resource "azurerm_key_vault_access_policy" "demoapp_admin" {
@@ -372,11 +377,11 @@ resource "azurerm_private_endpoint" "demoapp_kv" {
   }
 }
 
+/* Just a sample of Azure Policy assignment. It is recommended to assign it in the management group to take advantage of inheritance and avoid duplicate assignments in the subscription.
+
 data "azurerm_policy_definition" "k8s_container_no_privilege" {
   name = "95edb821-ddaf-4404-9732-666045e056b4"
 }
-
-/* Just a sample of Azure Policy assignment. It is recommended to assign it in the management group to take advantage of inheritance and avoid duplicate assignments in the subscription.
 
 resource "azurerm_subscription_policy_assignment" "k8s_container_no_privilege" {
   name                 = "k8s-container-no-privilege"
