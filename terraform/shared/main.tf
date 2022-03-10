@@ -296,6 +296,11 @@ resource "azurerm_key_vault" "demoapp" {
   resource_group_name = azurerm_resource_group.shared.name
   tenant_id           = local.tenant_id
   sku_name            = "standard"
+
+  network_acls {
+    bypass         = "None"
+    default_action = "Deny"
+  }
 }
 
 resource "azurerm_key_vault_access_policy" "demoapp_admin" {
