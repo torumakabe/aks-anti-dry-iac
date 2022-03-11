@@ -49,4 +49,4 @@ clean-blue:
 
 .PHONY: clean-green
 clean-green:
-	$(call CLEAN,shared)
+	$(call CLEAN,green)
