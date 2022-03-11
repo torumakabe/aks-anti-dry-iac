@@ -1,9 +1,9 @@
 SHELL=/bin/bash
 
 TF_VERSION := 1.1.7
-FLUX_REPO_URL := https://github.com/ToruMakabe/aks-playground.git
+FLUX_REPO_URL := https://github.com/ToruMakabe/aks-anti-dry-iac.git
 # Make sure you pushed the branch under development if you modified /flux
-FLUX_BRANCH := main
+FLUX_BRANCH := dev
 
 # Before running this test, you must:
 # export GITHUB_TOKEN=your-token
@@ -49,4 +49,4 @@ clean-blue:
 
 .PHONY: clean-green
 clean-green:
-	$(call CLEAN,green)
+	$(call CLEAN,shared)
