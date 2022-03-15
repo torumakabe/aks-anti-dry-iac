@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.98.0"
+      version = "~> 2.99.0"
     }
   }
 }
@@ -116,13 +116,11 @@ resource "azurerm_kubernetes_cluster" "default" {
     user_assigned_identity_id = azurerm_user_assigned_identity.aks_kubelet.id
   }
 
-  role_based_access_control {
-    enabled = true
-    azure_active_directory {
-      managed                = true
-      azure_rbac_enabled     = true
-      admin_group_object_ids = var.aks.aad.admin_group_object_ids
-    }
+  role_based_access_control_enabled = true
+  azure_active_directory_role_based_access_control {
+    managed                = true
+    admin_group_object_ids = var.aks.aad.admin_group_object_ids
+    azure_rbac_enabled     = true
   }
 
   network_profile {
