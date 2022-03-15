@@ -33,4 +33,5 @@ flux bootstrap github \
   --repository=aks-anti-dry-iac \
   --branch="${FLUX_BRANCH}" \
   --path="./flux/clusters/${CLUSTER_SWITCH}" \
-  --personal
+  --personal \
+  --toleration-keys=CriticalAddonsOnly

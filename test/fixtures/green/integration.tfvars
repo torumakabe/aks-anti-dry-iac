@@ -11,12 +11,13 @@ aks = {
   }
   node_pool = {
     system = {
-      node_count = 2
+      node_count = 3
     }
     user = {
       // one pool per zone
       // total nodes = node_count * 3 AZ
       node_count = 1
+      priority   = "Spot"
     }
   }
   aad = {

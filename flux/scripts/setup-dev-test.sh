@@ -7,13 +7,13 @@ set -eo pipefail
 
 if [ $# -lt 4 ] && [ $# -gt 5 ]
 then
-  echo "[Error] Usage: setup-flux.sh <blue/green> <cluster resource group name> <cluster name> <flux repo url> <flux branch(defaut: main)>"
+  echo "[Error] Usage: setup-dev-test.sh <blue/green> <cluster resource group name> <cluster name> <flux repo url> <flux branch(defaut: main)>"
   exit 1
 fi
 
 if [ "$1" != "blue" ] && [ "$1" != "green" ]
 then
-  echo "[Error] Usage: setup-flux.sh <blue/green> <cluster resource group name> <cluster name> <flux repo url> <flux branch(defaut: main)>"
+  echo "[Error] Usage: setup-dev-test.sh <blue/green> <cluster resource group name> <cluster name>  <flux repo url> <flux branch(defaut: main)"
   exit 1
 fi
 
@@ -29,7 +29,7 @@ az aks get-credentials -g "${AKS_RESOURCE_GROUP_NAME}" -n "${AKS_CLUSTER_NAME}" 
 
 kubelogin convert-kubeconfig -l azurecli
 
-flux install --log-level debug
+flux install --toleration-keys=CriticalAddonsOnly --log-level debug
 
 flux create secret git github-credentials \
   --url="${FLUX_REPO_URL}" \
@@ -56,4 +56,4 @@ EOF
 flux create kustomization flux-system \
   --interval=15m \
   --source=flux-system \
-  --path="./flux/clusters/${CLUSTER_SWITCH}"
+  --path="./flux/clusters/${CLUSTER_SWITCH}-dev-test"

@@ -1,7 +1,7 @@
 # If you don't want to manage with files, choose other means such as environment variables.
 # https://www.terraform.io/docs/language/values/variables.html
 
-prefix = "yours"
+prefix = "tomakabe"
 suffix = "e2e"
 
 aks = {
@@ -11,12 +11,13 @@ aks = {
   }
   node_pool = {
     system = {
-      node_count = 2
+      node_count = 1
     }
     user = {
       // one pool per zone
       // total nodes = node_count * 3 AZ
       node_count = 1
+      priority   = "Spot"
     }
   }
   aad = {

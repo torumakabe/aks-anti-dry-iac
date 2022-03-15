@@ -11,6 +11,7 @@ spec:
         kind: HelmRepository
         name: ingress-nginx
         namespace: flux-system
+      version: "4.0.17"
   interval: 5m
   install:
     remediation:
@@ -22,8 +23,26 @@ spec:
   # https://github.com/kubernetes/ingress-nginx/blob/master/charts/ingress-nginx/values.yaml
   values:
     controller:
-      service:
-        type: LoadBalancer
       replicaCount: 2
+      service:
+        annotations:
+          service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+          service.beta.kubernetes.io/azure-load-balancer-internal-subnet: ${demoapp_ingress_svc_subnet}
+        type: LoadBalancer
+        loadBalancerIP: ${demoapp_ingress_svc_ip}
+        externalTrafficPolicy: Local
+      config:
+        use-forwarded-headers: "true"
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      admissionWebhooks:
+        patch:
+          tolerations:
+          - key: CriticalAddonsOnly
+            operator: Exists
     defaultBackend:
       enabled: "true"
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
