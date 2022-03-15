@@ -18,6 +18,7 @@ variable "aks" {
       })
       user = object({
         node_count = number
+        priority   = string
       })
     })
     aad = object({

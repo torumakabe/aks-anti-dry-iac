@@ -167,9 +167,17 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   vm_size               = local.aks.default.vm_size
   availability_zones    = [each.key]
   node_count            = var.aks.node_pool.user.node_count
+  priority              = var.aks.node_pool.user.priority
   os_disk_size_gb       = local.aks.default.os_disk_size_gb
   os_disk_type          = local.aks.default.os_disk_type
   os_sku                = local.aks.default.os_sku
+
+  lifecycle {
+    ignore_changes = [
+      eviction_policy,
+      node_taints,
+    ]
+  }
 }
 
 resource "azurerm_role_assignment" "aks_metrics" {

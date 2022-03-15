@@ -17,6 +17,7 @@ aks = {
       // one pool per zone
       // total nodes = node_count * 3 AZ
       node_count = 1
+      priority   = "Spot"
     }
   }
   aad = {

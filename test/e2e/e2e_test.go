@@ -238,7 +238,7 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) error {
 	rgName := state.Values.Outputs["resource_group_name"].Value.(string)
 	clusterName := state.Values.Outputs["aks_cluster_name"].Value.(string)
 
-	bsScriptPath := "../scripts/setup-flux.sh"
+	bsScriptPath := "../../flux/scripts/setup-dev-test.sh"
 	cmd := exec.Command(bsScriptPath, clusterSwitch, rgName, clusterName, *fluxURL, *fluxBranch)
 	cmd.Env = os.Environ()
 	var outb, errb bytes.Buffer
