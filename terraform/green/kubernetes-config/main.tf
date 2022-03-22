@@ -4,7 +4,7 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.8"
+      version = "~> 2.9"
     }
   }
 }
@@ -52,10 +52,10 @@ resource "kubernetes_config_map" "oms_agent" {
 [log_collection_settings]
    [log_collection_settings.stdout]
       enabled = true
-      exclude_namespaces = ["kube-system"]
+      exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
    [log_collection_settings.stderr]
       enabled = true
-      exclude_namespaces = ["kube-system"]
+      exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
    [log_collection_settings.env_var]
       enabled = true
    [log_collection_settings.enrich_container_logs]
