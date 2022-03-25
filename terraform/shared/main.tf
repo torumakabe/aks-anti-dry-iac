@@ -6,7 +6,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.99.0"
+      version = "~> 3.0.0"
     }
 
     random = {
@@ -57,7 +57,11 @@ module "subnet_addrs" {
 }
 
 provider "azurerm" {
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 resource "azurerm_resource_group" "shared" {
@@ -169,6 +173,7 @@ resource "azurerm_public_ip" "demoapp" {
   location            = azurerm_resource_group.shared.location
   allocation_method   = "Static"
   sku                 = "Standard"
+  zones               = [1, 2, 3]
 }
 
 resource "azurerm_application_gateway" "shared" {
@@ -311,14 +316,14 @@ resource "azurerm_key_vault_access_policy" "demoapp_admin" {
   object_id    = local.current_client.object_id
 
   secret_permissions = [
-    "backup",
-    "delete",
-    "get",
-    "list",
-    "purge",
-    "recover",
-    "restore",
-    "set",
+    "Backup",
+    "Delete",
+    "Get",
+    "List",
+    "Purge",
+    "Recover",
+    "Restore",
+    "Set",
   ]
 
   # for CI
