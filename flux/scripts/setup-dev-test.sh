@@ -39,7 +39,7 @@ flux create secret git github-credentials \
   --password="${GITHUB_TOKEN}"
 
 kubectl apply -f - <<EOF
-apiVersion: source.toolkit.fluxcd.io/v1beta1
+apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: GitRepository
 metadata:
   name: flux-system
