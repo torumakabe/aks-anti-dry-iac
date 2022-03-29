@@ -1,6 +1,6 @@
 module github.com/ToruMakabe/aks-anti-dry-iac/test/e2e
 
-go 1.17
+go 1.18
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.0

@@ -5,15 +5,17 @@ set -eo pipefail
 # export GITHUB_TOKEN=your-token
 # export GITHUB_USER=your-username
 
-if [ $# -lt 4 ] && [ $# -gt 5 ]
+USAGE="[Error] Usage: setup-dev-test.sh <blue/green> <cluster resource group name> <cluster name>  <flux repo url> [<flux branch(defaut: main)]"
+
+if [ $# -lt 4 ] || [ $# -gt 5 ]
 then
-  echo "[Error] Usage: setup-dev-test.sh <blue/green> <cluster resource group name> <cluster name> <flux repo url> <flux branch(defaut: main)>"
+  echo "$USAGE"
   exit 1
 fi
 
 if [ "$1" != "blue" ] && [ "$1" != "green" ]
 then
-  echo "[Error] Usage: setup-dev-test.sh <blue/green> <cluster resource group name> <cluster name>  <flux repo url> <flux branch(defaut: main)"
+  echo "$USAGE"
   exit 1
 fi
 

@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/cookiejar"
+	"net/netip"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -26,11 +29,25 @@ type ResponseBodyIncr struct {
 	Hostname string `json:"hostname"`
 }
 
+type aksCluster struct {
+	rgName      string
+	clusterName string
+}
+
+type endpointTestConfig struct {
+	IP                 netip.Addr
+	cardinarity        int
+	prepTimeout        time.Duration
+	testDuration       time.Duration
+	chaosTestManifests []string
+}
+
 var (
-	scope      = flag.String("scope", "all", "specify target cluster [blue/green/all]")
-	tfVer      = flag.String("tf-version", "1.1.7", "specify Terraform version")
-	fluxURL    = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
-	fluxBranch = flag.String("flux-branch", "", "specify Flux branch")
+	scope              = flag.String("scope", "all", "specify test scope [blue/green/all]")
+	tfVer              = flag.String("tf-version", "1.1.7", "specify Terraform version")
+	fluxURL            = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
+	fluxBranch         = flag.String("flux-branch", "", "specify Flux branch")
+	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
 )
 
 func init() {
@@ -44,16 +61,37 @@ func TestE2E(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var targets []string
+	clusters := map[string]aksCluster{}
 	switch *scope {
 	case "blue":
-		targets = append(targets, "blue")
+		clusters["blue"] = aksCluster{}
 	case "green":
-		targets = append(targets, "green")
+		clusters["green"] = aksCluster{}
 	case "all":
-		targets = append(targets, "blue", "green")
+		clusters["blue"] = aksCluster{}
+		clusters["green"] = aksCluster{}
 	default:
 		t.Fatalf("Please specify [blue/green/all] as scope")
+	}
+
+	pattern := *chaosTestManifests
+	var absManifestPaths []string
+	paths, err := filepath.Glob(pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(paths) > 0 {
+		for _, path := range paths {
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			absManifestPaths = append(absManifestPaths, absPath)
+		}
+		t.Logf("Chaos test manifests: %s", absManifestPaths)
+	} else {
+		t.Logf("Chaos test nanifests not found: %s", pattern)
 	}
 
 	execPath, err := installTF(t)
@@ -74,17 +112,16 @@ func TestE2E(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("\nendpoint: %s", endpoint)
 
 	t.Cleanup(func() {
 		// destroy AKS cluster in parallel
 		t.Run("destroyAKS", func(t *testing.T) {
-			for _, target := range targets {
-				target := target
-				tn := fmt.Sprintf("destroy%s", target)
-				wd := fmt.Sprintf("../fixtures/%s", target)
+			for cluster := range clusters {
+				cluster := cluster
+				tn := fmt.Sprintf("destroy%s", cluster)
+				wd := fmt.Sprintf("../fixtures/%s", cluster)
 				t.Run(tn, func(t *testing.T) {
-					t.Logf("Destroying AKS cluster (%s)...", target)
+					t.Logf("Destroying AKS cluster (%s)...", cluster)
 					err = destroyAKS(t, wd, execPath, "./e2e.tfvars")
 					if err != nil {
 						t.Fatal(err)
@@ -95,37 +132,52 @@ func TestE2E(t *testing.T) {
 	})
 
 	// setup AKS cluster in parallel
-	s := t.Run("setupAKS", func(t *testing.T) {
-		for _, target := range targets {
-			target := target
-			tn := fmt.Sprintf("setup%s", target)
-			wd := fmt.Sprintf("../fixtures/%s", target)
-			s := t.Run(tn, func(t *testing.T) {
-				t.Logf("Setting up AKS cluster (%s)...", target)
-				err = setupAKS(t, wd, execPath, "./e2e.tfvars")
+	var mutex = &sync.Mutex{}
+	r := t.Run("setupAKS", func(t *testing.T) {
+		for cluster := range clusters {
+			cluster := cluster
+			tn := fmt.Sprintf("setup%s", cluster)
+			wd := fmt.Sprintf("../fixtures/%s", cluster)
+			r := t.Run(tn, func(t *testing.T) {
+				t.Logf("Setting up AKS cluster (%s)...", cluster)
+				rgName, clusterName, err := setupAKS(t, wd, execPath, "./e2e.tfvars")
 				if err != nil {
-					t.Error(err)
+					t.Fatal(err)
 				}
+				mutex.Lock()
+				clusters[cluster] = aksCluster{rgName: rgName, clusterName: clusterName}
+				mutex.Unlock()
 			})
-			if !s {
-				t.Errorf("Setting up AKS cluster (%s) failed", target)
+			if !r {
+				t.Fatalf("Setting up AKS cluster (%s) failed", cluster)
 			}
 		}
 	})
-
-	if !s {
-		t.Fatal("Setting up AKS cluster failed")
+	if !r {
+		t.Fatal("Setting up AKS cluster(s) failed")
 	}
 
+	endpointIP, err := netip.ParseAddr(endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cardinarity := 4
 	if *scope != "all" {
 		cardinarity = 2
 	}
 
+	config := &endpointTestConfig{
+		IP:                 endpointIP,
+		cardinarity:        cardinarity,
+		prepTimeout:        10 * time.Minute,
+		testDuration:       2 * time.Minute,
+		chaosTestManifests: absManifestPaths,
+	}
+
 	t.Log("Testing endpoint...")
-	err = testEndpoint(t, endpoint, cardinarity, 100, true)
+	err = testEndpoint(t, config, clusters)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	t.Log("Testing completed.")
@@ -208,7 +260,7 @@ func destroyShared(t *testing.T, workingDir, execPath, varFile string) error {
 	return nil
 }
 
-func setupAKS(t *testing.T, workingDir, execPath, varFile string) error {
+func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, string, error) {
 	t.Helper()
 	t.Parallel()
 
@@ -217,29 +269,29 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) error {
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	err = tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	err = tf.Apply(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	state, err := tf.Show(context.Background())
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	rgName := state.Values.Outputs["resource_group_name"].Value.(string)
 	clusterName := state.Values.Outputs["aks_cluster_name"].Value.(string)
 
-	bsScriptPath := "../../flux/scripts/setup-dev-test.sh"
-	cmd := exec.Command(bsScriptPath, clusterSwitch, rgName, clusterName, *fluxURL, *fluxBranch)
+	scriptPath := "../../flux/scripts/setup-dev-test.sh"
+	cmd := exec.Command(scriptPath, clusterSwitch, rgName, clusterName, *fluxURL, *fluxBranch)
 	cmd.Env = os.Environ()
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
@@ -248,10 +300,10 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) error {
 	if err != nil {
 		t.Log(outb.String())
 		t.Log(errb.String())
-		return err
+		return "", "", err
 	}
 
-	return nil
+	return rgName, clusterName, nil
 }
 
 func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
@@ -271,49 +323,118 @@ func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
 	return nil
 }
 
-func testEndpoint(t *testing.T, endpoint string, cardinarity, attempts int, cookieTest bool) error {
+func testEndpoint(t *testing.T, config *endpointTestConfig, clusters map[string]aksCluster) error {
 	t.Helper()
-	url := fmt.Sprintf("http://%s/incr", endpoint)
+
+	// Test that Pods started as expected
+	err := testPodCardinarity(t, config)
+	if err != nil {
+		return err
+	}
+
+	// Test incremting the count with session
+	readyChan := make(chan struct{})
+	errChan := make(chan error)
+	defer close(errChan)
+	go func() {
+		err := testSession(t, config, readyChan)
+		errChan <- err
+	}()
+
+	// Wait until session test is ready
+	_, ok := <-readyChan
+	if ok {
+		// Test resiliency with chaos injection
+		if len(config.chaosTestManifests) > 0 {
+			err = injectChaos(t, config, clusters)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Wait until session test completes or returns error
+	err = <-errChan
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func testPodCardinarity(t *testing.T, config *endpointTestConfig) error {
+	t.Helper()
+
+	url := fmt.Sprintf("http://%s/incr", config.IP.String())
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 50
+	retryClient.Logger = nil
+
+	// Wait until Pod cardinarity reaches the expected value with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), config.prepTimeout)
+	defer cancel()
 
 	hostSet := make(map[string]struct{})
-	for i := 0; i < attempts; i++ {
-		resp, err := retryClient.Get(url)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+loop:
+	for i := 0; ; i++ {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("tried for %s but did not reach the specified cardinarity of pods: %d / %d", config.prepTimeout, len(hostSet), config.cardinarity)
+		default:
+			resp, err := retryClient.Get(url)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
 
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		t.Log(string(body))
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
 
-		var r ResponseBodyIncr
-		err = json.Unmarshal(body, &r)
-		if err != nil {
-			return err
+			var r ResponseBodyIncr
+			err = json.Unmarshal(body, &r)
+			if err != nil {
+				return err
+			}
+			hostSet[r.Hostname] = struct{}{}
+			if len(hostSet) == config.cardinarity {
+				t.Logf("All Pods (%d/%d) respond successfully", len(hostSet), config.cardinarity)
+				break loop
+			}
+
+			t.Logf("Waiting for all Pods (%d/%d) to respond: %d attempt(s)", len(hostSet), config.cardinarity, i+1)
+			time.Sleep(time.Second * 10)
 		}
-		hostSet[r.Hostname] = struct{}{}
-		if len(hostSet) == cardinarity {
-			break
-		}
-		time.Sleep(time.Second * 5)
 	}
-	if len(hostSet) < cardinarity {
-		return fmt.Errorf("tried %d times but did not reach the specified cardinarity of pods: %d pods", attempts, cardinarity)
-	}
 
-	// Test incremting the count with cookie
-	if cookieTest {
-		standardClient := retryClient.StandardClient()
-		jar, _ := cookiejar.New(nil)
-		standardClient.Jar = jar
+	return nil
+}
 
-		var countMemo int
-		for i := 0; i < 10; i++ {
+func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct{}) error {
+	t.Helper()
+	defer close(readyChan)
+
+	url := fmt.Sprintf("http://%s/incr", config.IP.String())
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 50
+	retryClient.Logger = nil
+	standardClient := retryClient.StandardClient()
+	jar, _ := cookiejar.New(nil)
+	standardClient.Jar = jar
+
+	// Set test duration
+	ctx, cancel := context.WithTimeout(context.Background(), config.testDuration)
+	defer cancel()
+
+	t.Logf("Session test started. The duration is %s", config.testDuration)
+	var countMemo int
+	for i := 0; ; i++ {
+		select {
+		case <-ctx.Done():
+			t.Logf("Got the expected response successfully for %s", config.testDuration)
+			return nil
+		default:
 			resp, err := standardClient.Get(url)
 			if err != nil {
 				return err
@@ -324,7 +445,6 @@ func testEndpoint(t *testing.T, endpoint string, cardinarity, attempts int, cook
 			if err != nil {
 				return err
 			}
-			t.Log(string(body))
 
 			var r ResponseBodyIncr
 			err = json.Unmarshal(body, &r)
@@ -334,12 +454,59 @@ func testEndpoint(t *testing.T, endpoint string, cardinarity, attempts int, cook
 
 			if i == 0 {
 				countMemo = r.Count
+				readyChan <- struct{}{}
 				continue
 			}
 			if (r.Count - countMemo) != 1 {
-				return fmt.Errorf("persistent cookie did not work")
+				return fmt.Errorf("counter increment with session did not work. last: %d, received: %d", countMemo, r.Count)
 			}
 			countMemo = r.Count
+		}
+	}
+}
+
+// TODO: Replace this function to Azure Chaos Studio for flexible experiment control such as step/branch
+// This function simply executes manifests in succession with equal interval at this time
+func injectChaos(t *testing.T, config *endpointTestConfig, clusters map[string]aksCluster) error {
+	t.Helper()
+
+	t.Cleanup(func() {
+		scriptPath := "../chaos/scripts/cleanup.sh"
+		for k, v := range clusters {
+			t.Logf("Cleaning up the chaos from %s", k)
+			for _, manifest := range config.chaosTestManifests {
+				cmd := exec.Command(scriptPath, v.rgName, v.clusterName, manifest)
+				cmd.Env = os.Environ()
+				var outb, errb bytes.Buffer
+				cmd.Stdout = &outb
+				cmd.Stderr = &errb
+				err := cmd.Run()
+				if err != nil {
+					t.Log(outb.String())
+					t.Log(errb.String())
+				}
+			}
+		}
+	})
+
+	// Calculate equal interval to apply chaos test manifests
+	interval := config.testDuration / time.Duration(len(config.chaosTestManifests)*len(clusters)+1)
+
+	scriptPath := "../chaos/scripts/inject.sh"
+	for k, v := range clusters {
+		t.Logf("Injecting the chaos to %s", k)
+		for _, manifest := range config.chaosTestManifests {
+			cmd := exec.Command(scriptPath, v.rgName, v.clusterName, manifest)
+			cmd.Env = os.Environ()
+			var outb, errb bytes.Buffer
+			err := cmd.Run()
+			if err != nil {
+				cmd.Stdout = &outb
+				cmd.Stderr = &errb
+				return err
+			}
+			t.Logf("Applied manifest %s to %s successfully", manifest, v.clusterName)
+			time.Sleep(interval)
 		}
 	}
 

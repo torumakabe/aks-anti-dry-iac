@@ -26,7 +26,7 @@ jobs:
 
       - name: "Diff files"
         id: diff
-        working-directory: ./test/scripts
+        working-directory: ./test/integration/scripts
         shell: bash -x {0}
         continue-on-error: true
         run: |

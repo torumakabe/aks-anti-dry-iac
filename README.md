@@ -28,8 +28,8 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 ## Prerequisites & Tested <a name = "prerequisites"></a>
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.1.7
-  - hashicorp/azurerm: 2.99
-  - hashicorp/kubernetes: 2.8
+  - hashicorp/azurerm: 3.0
+  - hashicorp/kubernetes: 2.9
   - State store: Local
 - [Flux(v2)](https://fluxcd.io/docs/): 0.27.3
 
@@ -118,6 +118,7 @@ E2E test should also be automated and always ready to run to see the impact of i
 - Actually create the infrastructure resources and run application on test fixtures
   - terraform apply (from Go test program)
   - create a sample app with Flux GitOps & check the endpoint (from Go test program)
+    - chaos testing with Chaos Mesh
 - Feel free to run
   - Just run ["make test"](./test/e2e/Makefile)
   - Cleanup the resources after test automatically
@@ -145,7 +146,7 @@ You can join/remove services of each cluster to/from backend addresses of Applic
 
 This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./terraform/blue/dev.tfvars).
 
-There are [sample app](https://github.com/ToruMakabe/session-checker) and [test script](./test/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
+There are [sample app](https://github.com/ToruMakabe/session-checker) and [test script](./test/tools/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
 
 If you have both Blue and Green joined in the backend, then:
 

@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.99.0"
+      version = "~> 3.0.0"
     }
   }
 }
@@ -95,7 +95,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     orchestrator_version         = local.aks.default.orchestrator_version
     vnet_subnet_id               = local.aks.network.node_subnet_id
     pod_subnet_id                = local.aks.network.pod_subnet_id
-    availability_zones           = [1, 2, 3]
+    zones                        = [1, 2, 3]
     node_count                   = var.aks.node_pool.system.node_count
     vm_size                      = local.aks.default.vm_size
     only_critical_addons_enabled = true
@@ -106,8 +106,8 @@ resource "azurerm_kubernetes_cluster" "default" {
   }
 
   identity {
-    type                      = "UserAssigned"
-    user_assigned_identity_id = azurerm_user_assigned_identity.aks_cplane.id
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.aks_cplane.id]
   }
 
   kubelet_identity {
@@ -149,7 +149,6 @@ resource "azurerm_kubernetes_cluster" "default" {
 
   lifecycle {
     ignore_changes = [
-      addon_profile,
       default_node_pool[0].node_labels,
     ]
   }
@@ -163,7 +162,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   vnet_subnet_id        = local.aks.network.node_subnet_id
   pod_subnet_id         = local.aks.network.pod_subnet_id
   vm_size               = local.aks.default.vm_size
-  availability_zones    = [each.key]
+  zones                 = [each.key]
   node_count            = var.aks.node_pool.user.node_count
   priority              = var.aks.node_pool.user.priority
   os_disk_size_gb       = local.aks.default.os_disk_size_gb
@@ -181,7 +180,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
 resource "azurerm_role_assignment" "aks_metrics" {
   scope                = azurerm_kubernetes_cluster.default.id
   role_definition_name = "Monitoring Metrics Publisher"
-  principal_id         = azurerm_kubernetes_cluster.default.addon_profile.0.oms_agent.0.oms_agent_identity.0.object_id
+  principal_id         = azurerm_kubernetes_cluster.default.oms_agent.0.oms_agent_identity.0.object_id
 }
 
 resource "azurerm_monitor_diagnostic_setting" "aks" {
@@ -323,7 +322,7 @@ resource "azurerm_key_vault_access_policy" "demoapp_kubelet" {
   object_id    = azurerm_user_assigned_identity.aks_kubelet.principal_id
 
   secret_permissions = [
-    "get",
-    "list",
+    "Get",
+    "List",
   ]
 }
