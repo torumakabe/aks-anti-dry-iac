@@ -31,7 +31,7 @@ DRY is a great concept, and you should be aware that it will come true in the fu
   - hashicorp/azurerm: 3.0
   - hashicorp/kubernetes: 2.9
   - State store: Local
-- [Flux(v2)](https://fluxcd.io/docs/): 0.27.3
+- [Flux(v2)](https://fluxcd.io/docs/): 0.28.4
 
 ### Privileges required for execution
 
