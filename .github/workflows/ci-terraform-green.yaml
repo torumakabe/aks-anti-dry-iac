@@ -79,9 +79,9 @@ jobs:
         run: make init-green
 
       - name: "Setup TFLint"
-        uses: terraform-linters/setup-tflint@v1
+        uses: terraform-linters/setup-tflint@v2
         with:
-          tflint_version: v0.34.1
+          tflint_version: v0.35.0
 
       - name: "Run TFLint"
         id: tflint
