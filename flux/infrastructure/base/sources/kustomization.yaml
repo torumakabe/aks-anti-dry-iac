@@ -4,3 +4,4 @@ namespace: flux-system
 resources:
   - ingress-nginx.yaml
   - chaos-mesh.yaml
+  - podinfo.yaml
