@@ -27,11 +27,11 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 ## Prerequisites & Tested <a name = "prerequisites"></a>
 
-- [Terraform](https://www.terraform.io/docs/index.html): 1.1.7
-  - hashicorp/azurerm: 3.0
-  - hashicorp/kubernetes: 2.9
+- [Terraform](https://www.terraform.io/docs/index.html): 1.1.8
+  - hashicorp/azurerm: 3.1.0
+  - hashicorp/kubernetes: 2.10
   - State store: Local
-- [Flux(v2)](https://fluxcd.io/docs/): 0.28.4
+- [Flux(v2)](https://fluxcd.io/docs/): 0.28.5
 
 ### Privileges required for execution
 
