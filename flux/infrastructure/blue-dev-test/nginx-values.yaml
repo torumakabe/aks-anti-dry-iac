@@ -12,9 +12,13 @@ spec:
         operator: Equal
         value: spot
         effect: NoSchedule
+      - key: CriticalAddonsOnly
+        operator: Exists
     defaultBackend:
       tolerations:
       - key: kubernetes.azure.com/scalesetpriority
         operator: Equal
         value: spot
         effect: NoSchedule
+      - key: CriticalAddonsOnly
+        operator: Exists
