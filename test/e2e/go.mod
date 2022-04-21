@@ -1,4 +1,4 @@
-module github.com/ToruMakabe/aks-playground/test/e2e
+module github.com/ToruMakabe/anti-dry-iac/test/e2e
 
 go 1.18
 
