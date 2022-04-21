@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.1.8"
+  required_version = "~> 1.1.9"
   # Choose the backend according to your requirements
   # backend "remote" {}
 

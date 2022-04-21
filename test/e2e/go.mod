@@ -1,12 +1,12 @@
-module github.com/ToruMakabe/aks-anti-dry-iac/test/e2e
+module github.com/ToruMakabe/aks-playground/test/e2e
 
 go 1.18
 
 require (
-	github.com/hashicorp/go-retryablehttp v0.7.0
+	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/hashicorp/go-version v1.4.0
 	github.com/hashicorp/hc-install v0.3.1
-	github.com/hashicorp/terraform-exec v0.16.0
+	github.com/hashicorp/terraform-exec v0.16.1
 )
 
 require (
