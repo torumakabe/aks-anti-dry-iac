@@ -72,7 +72,7 @@ EOT
     prometheus-data-collection-settings      = <<EOT
 [prometheus_data_collection_settings.node]
     interval = "1m"
-    urls = ["http://$NODE_IP:9103/metrics"]
+    urls = ["http://$NODE_IP:19100/metrics"]
 EOT
     metric_collection_settings               = <<EOT
 [metric_collection_settings.collect_kube_system_pv_metrics]
