@@ -29,9 +29,10 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.1.9
   - hashicorp/azurerm: 3.3.0
-  - hashicorp/kubernetes: 2.10
+  - hashicorp/kubernetes: 2.11
   - State store: Local
 - [Flux(v2)](https://fluxcd.io/docs/): 0.29.2
+- [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.0.13
 
 ### Privileges required for execution
 
