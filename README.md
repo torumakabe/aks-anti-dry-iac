@@ -7,7 +7,7 @@
 - [Usage](#usage)
 - [Notes](#notes)
 
-## Background <a name = "background"></a>
+## Background
 
 It's hard to keep up with the evolution of Kubernetes. Significantly, upgrade strategy is a headache.
 
@@ -19,13 +19,15 @@ The codes in this repository are a sample of implementation of Azure Kubernetes 
 
 In this strategy, you should not persist data, state, and configuration in a cluster. All of them should be stored outside the cluster and connected for bootstrapping, configuration, running apps, and operation.
 
-<img src="https://raw.githubusercontent.com/ToruMakabe/Images/master/aks-anti-dry.png?raw=true" width="800">
+![Overview](./images/aks-anti-dry.png)
 
 However, the difference of codes between Blue and Green must be easy to see. Therefore, this sample has support steps in CI, such as posting the diff as a comment at the time of Pull Requests.
 
 DRY is a great concept, and you should be aware that it will come true in the future, but I hope this sample will serve as a starting point.
 
-## Prerequisites & Tested <a name = "prerequisites"></a>
+## Prerequisites
+
+Prerequisites & tested
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.1.9
   - hashicorp/azurerm: 3.3.0
@@ -49,7 +51,7 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 In this sample, assigned strong privileges to admin so that you can try it smoothly for your PoC. In your actual operation, please be aware of the least privilege and fine-grained scope for you.
 
-## Usage <a name = "usage"></a>
+## Usage
 
 ### Prepare variables
 
@@ -208,7 +210,7 @@ Number of unrecoverable HTTP errors: 0
 
 Removed the Service IP of Blue without disruption. So, you can destroy the Blue cluster.
 
-## Notes <a name = "notes"></a>
+## Notes
 
 - Always be aware of the context of which cluster you are currently working on
   - [Visual Studio Code Kubernetes Tools](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
