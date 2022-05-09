@@ -1,0 +1,25 @@
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - varcheck
+    - bodyclose
+    - thelper
+    - tparallel
+
+linters-settings:
+  govet:
+    check-shadowing: false
+
+issues:
+  exclude-rules:
+    - path: version\.go
+      linters:
+        - deadcode

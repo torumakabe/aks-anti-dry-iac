@@ -25,8 +25,8 @@ import (
 )
 
 type ResponseBodyIncr struct {
-	Count    int    `json:"count"`
 	Hostname string `json:"hostname"`
+	Count    int    `json:"count"`
 }
 
 type aksCluster struct {
@@ -36,10 +36,10 @@ type aksCluster struct {
 
 type endpointTestConfig struct {
 	IP                 netip.Addr
+	chaosTestManifests []string
 	cardinarity        int
 	prepTimeout        time.Duration
 	testDuration       time.Duration
-	chaosTestManifests []string
 }
 
 var (
@@ -83,11 +83,11 @@ func TestE2E(t *testing.T) {
 
 	if len(paths) > 0 {
 		for _, path := range paths {
-			absPath, err := filepath.Abs(path)
+			p, err := filepath.Abs(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			absManifestPaths = append(absManifestPaths, absPath)
+			absManifestPaths = append(absManifestPaths, p)
 		}
 		t.Logf("Chaos test manifests: %s", absManifestPaths)
 	} else {
@@ -165,7 +165,6 @@ func TestE2E(t *testing.T) {
 	if *scope != "all" {
 		cardinarity = 2
 	}
-
 	config := &endpointTestConfig{
 		IP:                 endpointIP,
 		cardinarity:        cardinarity,
@@ -186,6 +185,7 @@ func TestE2E(t *testing.T) {
 // checkEnv chcek environment variables for Flux
 func checkEnv(t *testing.T) error {
 	t.Helper()
+
 	gh_token := os.Getenv("GITHUB_TOKEN")
 	if gh_token == "" {
 		return fmt.Errorf("You must export GITHUB_TOKEN")
@@ -206,8 +206,12 @@ func installTF(t *testing.T) (string, error) {
 		Product: product.Terraform,
 		Version: version.Must(version.NewVersion(*tfVer)),
 	}
+
 	t.Cleanup(func() {
-		installer.Remove(context.Background())
+		err := installer.Remove(context.Background())
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	execPath, err := installer.Install(context.Background())
@@ -254,7 +258,7 @@ func destroyShared(t *testing.T, workingDir, execPath, varFile string) error {
 
 	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	return nil
@@ -317,7 +321,7 @@ func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
 
 	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	return nil
@@ -332,7 +336,7 @@ func testEndpoint(t *testing.T, config *endpointTestConfig, clusters map[string]
 		return err
 	}
 
-	// Test incremting the count with session
+	// Test incrementing the count with session
 	readyChan := make(chan struct{})
 	errChan := make(chan error)
 	defer close(errChan)
@@ -341,10 +345,10 @@ func testEndpoint(t *testing.T, config *endpointTestConfig, clusters map[string]
 		errChan <- err
 	}()
 
-	// Wait until session test is ready
-	_, ok := <-readyChan
-	if ok {
-		// Test resiliency with chaos injection
+	// Wait until session test setup is ready (readyChan closed) for addtional test
+	_, open := <-readyChan
+	if !open {
+		// Additional test: Test resiliency with chaos injection
 		if len(config.chaosTestManifests) > 0 {
 			err = injectChaos(t, config, clusters)
 			if err != nil {
@@ -413,7 +417,6 @@ loop:
 
 func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct{}) error {
 	t.Helper()
-	defer close(readyChan)
 
 	url := fmt.Sprintf("http://%s/incr", config.IP.String())
 	retryClient := retryablehttp.NewClient()
@@ -454,7 +457,7 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 
 			if i == 0 {
 				countMemo = r.Count
-				readyChan <- struct{}{}
+				close(readyChan)
 				continue
 			}
 			if (r.Count - countMemo) != 1 {
@@ -482,6 +485,8 @@ func injectChaos(t *testing.T, config *endpointTestConfig, clusters map[string]a
 				cmd.Stderr = &errb
 				err := cmd.Run()
 				if err != nil {
+					// logging only (not critical)
+					t.Log(err)
 					t.Log(outb.String())
 					t.Log(errb.String())
 				}
@@ -499,10 +504,12 @@ func injectChaos(t *testing.T, config *endpointTestConfig, clusters map[string]a
 			cmd := exec.Command(scriptPath, v.rgName, v.clusterName, manifest)
 			cmd.Env = os.Environ()
 			var outb, errb bytes.Buffer
+			cmd.Stdout = &outb
+			cmd.Stderr = &errb
 			err := cmd.Run()
 			if err != nil {
-				cmd.Stdout = &outb
-				cmd.Stderr = &errb
+				t.Log(outb.String())
+				t.Log(errb.String())
 				return err
 			}
 			t.Logf("Applied manifest %s to %s successfully", manifest, v.clusterName)
