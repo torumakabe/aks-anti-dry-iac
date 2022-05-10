@@ -13,42 +13,42 @@ spec:
         app: session-checker
     spec:
       containers:
-        - name: session-checker
-          image:  ghcr.io/torumakabe/session-checker:v1.2.5
-          imagePullPolicy: IfNotPresent
-          command: ["/session-checker"]
-          volumeMounts:
-          - name: secrets-store01-inline
-            mountPath: "/mnt/secrets-store"
-            readOnly: true
-          env:
-          - name: SESSION_CHECKER_REDIS_SERVER
-            valueFrom:
-              secretKeyRef:
-                name: demoapp-secret
-                key: redis-server
-          - name: SESSION_CHECKER_REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: demoapp-secret
-                key: redis-password
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-      volumes:
+      - name: session-checker
+        image: ghcr.io/torumakabe/session-checker:v1.2.8 # {"$imagepolicy": "flux-system:session-checker"}
+        imagePullPolicy: IfNotPresent
+        command: ["/session-checker"]
+        volumeMounts:
         - name: secrets-store01-inline
-          csi:
-            driver: secrets-store.csi.k8s.io
-            readOnly: true
-            volumeAttributes:
-              secretProviderClass: "azure-sync"
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+        env:
+        - name: SESSION_CHECKER_REDIS_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: demoapp-secret
+              key: redis-server
+        - name: SESSION_CHECKER_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: demoapp-secret
+              key: redis-password
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: secrets-store01-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "azure-sync"
       dnsPolicy: "Default"

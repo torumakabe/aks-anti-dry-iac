@@ -31,6 +31,7 @@ az aks get-credentials -g "${AKS_RESOURCE_GROUP_NAME}" -n "${AKS_CLUSTER_NAME}" 
 kubelogin convert-kubeconfig -l azurecli
 
 flux bootstrap github \
+  --components-extra=image-reflector-controller,image-automation-controller \
   --owner="${GITHUB_USER}" \
   --repository=aks-anti-dry-iac \
   --branch="${FLUX_BRANCH}" \

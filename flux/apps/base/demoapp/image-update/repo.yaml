@@ -1,0 +1,8 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageRepository
+metadata:
+  name: session-checker
+  namespace: flux-system
+spec:
+  image: ghcr.io/torumakabe/session-checker
+  interval: 10m0s

@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: demoapp
 resources:
   - ../../base/demoapp
+  - ../../base/demoapp/image-update
 patchesStrategicMerge:
   - deployment-values.yaml
