@@ -50,6 +50,8 @@ var (
 	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
 )
 
+var waitOnce sync.Once
+
 func init() {
 	testing.Init()
 	flag.Parse()
@@ -270,6 +272,12 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 
 	sl := strings.Split(workingDir, "/")
 	clusterSwitch := sl[len(sl)-1]
+
+	waitOnce.Do(func() {
+		s := 30 * time.Second
+		t.Logf("%s wait %v to avoid conflictling shared resource operations like VNet", clusterSwitch, s)
+		time.Sleep(s)
+	})
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
