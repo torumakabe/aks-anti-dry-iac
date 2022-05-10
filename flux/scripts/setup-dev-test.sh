@@ -31,7 +31,10 @@ az aks get-credentials -g "${AKS_RESOURCE_GROUP_NAME}" -n "${AKS_CLUSTER_NAME}" 
 
 kubelogin convert-kubeconfig -l azurecli
 
-flux install --toleration-keys=CriticalAddonsOnly --log-level debug
+flux install \
+  --components-extra=image-reflector-controller,image-automation-controller \
+  --toleration-keys=CriticalAddonsOnly \
+  --log-level debug
 
 flux create secret git github-credentials \
   --url="${FLUX_REPO_URL}" \
