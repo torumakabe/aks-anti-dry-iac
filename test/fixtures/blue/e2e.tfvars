@@ -11,7 +11,7 @@ aks = {
   }
   node_pool = {
     system = {
-      node_count = 1
+      node_count = 2
     }
     user = {
       // one pool per zone
