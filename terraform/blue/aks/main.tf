@@ -47,8 +47,20 @@ resource "azurerm_role_assignment" "aks_mi_operator" {
   }
 }
 
-resource "azurerm_role_assignment" "aks_subnet" {
-  scope                = local.aks.network.node_subnet_id
+resource "azurerm_role_assignment" "aks_node_subnet_system" {
+  scope                = local.aks.network.node_system_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_user_assigned_identity.aks_cplane.principal_id
+
+  // Waiting for Azure AD preparation
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
+}
+
+resource "azurerm_role_assignment" "aks_node_subnet_az" {
+  for_each             = toset(["1", "2", "3"])
+  scope                = "${local.aks.network.node_user_az_subnet_id_prefix}${each.key}"
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.aks_cplane.principal_id
 
@@ -73,7 +85,7 @@ resource "azurerm_role_assignment" "aks_subnet_svc_lb" {
 resource "azurerm_kubernetes_cluster" "default" {
   depends_on = [
     azurerm_role_assignment.aks_mi_operator,
-    azurerm_role_assignment.aks_subnet,
+    azurerm_role_assignment.aks_node_subnet_system,
     azurerm_role_assignment.aks_subnet_svc_lb,
   ]
   name = local.aks.cluster_name
@@ -93,7 +105,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     # Optional: To keep up with the latest version
     # orchestrator_version  = data.azurerm_kubernetes_service_versions.current.latest_version
     orchestrator_version         = local.aks.default.orchestrator_version
-    vnet_subnet_id               = local.aks.network.node_subnet_id
+    vnet_subnet_id               = local.aks.network.node_system_subnet_id
     pod_subnet_id                = local.aks.network.pod_subnet_id
     zones                        = [1, 2, 3]
     node_count                   = var.aks.node_pool.system.node_count
@@ -159,7 +171,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   name                  = "az${each.key}"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.default.id
   orchestrator_version  = local.aks.default.orchestrator_version
-  vnet_subnet_id        = local.aks.network.node_subnet_id
+  vnet_subnet_id        = "${local.aks.network.node_user_az_subnet_id_prefix}${each.key}"
   pod_subnet_id         = local.aks.network.pod_subnet_id
   vm_size               = local.aks.default.vm_size
   zones                 = [each.key]

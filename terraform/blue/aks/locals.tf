@@ -18,9 +18,10 @@ locals {
       os_sku               = "Ubuntu"
     }
     network = {
-      node_subnet_id   = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node"
-      pod_subnet_id    = "${local.subnet_id_base}/snet-aks-pod-shared"
-      svc_lb_subnet_id = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-svc-lb"
+      node_system_subnet_id         = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node-system"
+      node_user_az_subnet_id_prefix = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node-user-az"
+      pod_subnet_id                 = "${local.subnet_id_base}/snet-aks-pod-shared"
+      svc_lb_subnet_id              = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-svc-lb"
     }
   }
   log_analytics = {
