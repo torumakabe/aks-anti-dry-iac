@@ -26,7 +26,19 @@ module "subnet_addrs" {
       new_bits = 2
     },
     {
-      name     = "aks_blue_node"
+      name     = "aks_blue_node_system"
+      new_bits = 8
+    },
+    {
+      name     = "aks_blue_node_user_az1"
+      new_bits = 8
+    },
+    {
+      name     = "aks_blue_node_user_az2"
+      new_bits = 8
+    },
+    {
+      name     = "aks_blue_node_user_az3"
       new_bits = 8
     },
     {
@@ -34,7 +46,19 @@ module "subnet_addrs" {
       new_bits = 8
     },
     {
-      name     = "aks_green_node"
+      name     = "aks_green_node_system"
+      new_bits = 8
+    },
+    {
+      name     = "aks_green_node_user_az1"
+      new_bits = 8
+    },
+    {
+      name     = "aks_green_node_user_az2"
+      new_bits = 8
+    },
+    {
+      name     = "aks_green_node_user_az3"
       new_bits = 8
     },
     {
@@ -92,11 +116,19 @@ resource "azurerm_subnet" "aks_pod_shared" {
   }
 }
 
-resource "azurerm_subnet" "aks_blue_node" {
-  name                 = "snet-aks-blue-node"
+resource "azurerm_subnet" "aks_blue_node_system" {
+  name                 = "snet-aks-blue-node-system"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_blue_node"]]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_blue_node_system"]]
+}
+
+resource "azurerm_subnet" "aks_blue_node_user_az" {
+  for_each             = toset(["1", "2", "3"])
+  name                 = "snet-aks-blue-node-user-az${each.key}"
+  resource_group_name  = azurerm_resource_group.shared.name
+  virtual_network_name = azurerm_virtual_network.default.name
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_blue_node_user_az${each.key}"]]
 }
 
 resource "azurerm_subnet" "aks_blue_svc_lb" {
@@ -107,11 +139,19 @@ resource "azurerm_subnet" "aks_blue_svc_lb" {
 
 }
 
-resource "azurerm_subnet" "aks_green_node" {
-  name                 = "snet-aks-green-node"
+resource "azurerm_subnet" "aks_green_node_system" {
+  name                 = "snet-aks-green-node-system"
   resource_group_name  = azurerm_resource_group.shared.name
   virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_green_node"]]
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_green_node_system"]]
+}
+
+resource "azurerm_subnet" "aks_green_node_user_az" {
+  for_each             = toset(["1", "2", "3"])
+  name                 = "snet-aks-green-node-user-az${each.key}"
+  resource_group_name  = azurerm_resource_group.shared.name
+  virtual_network_name = azurerm_virtual_network.default.name
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_green_node_user_az${each.key}"]]
 }
 
 resource "azurerm_subnet" "aks_green_svc_lb" {
@@ -236,6 +276,64 @@ resource "azurerm_application_gateway" "shared" {
     backend_address_pool_name  = local.demoapp.agw_settings.backend_address_pool_name
     backend_http_settings_name = local.demoapp.agw_settings.http_setting_name
   }
+}
+
+resource "azurerm_public_ip_prefix" "nat_outbound_aks_blue_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ippre-nat-outbound-aks-blue-az${each.key}"
+  location            = azurerm_resource_group.shared.location
+  resource_group_name = azurerm_resource_group.shared.name
+  prefix_length       = 30
+  zones               = [each.key]
+}
+
+resource "azurerm_nat_gateway" "aks_blue_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ng-aks-blue-user-az${each.key}"
+  location            = azurerm_resource_group.shared.location
+  resource_group_name = azurerm_resource_group.shared.name
+  sku_name            = "Standard"
+}
+
+resource "azurerm_nat_gateway_public_ip_prefix_association" "aks_blue_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  nat_gateway_id      = azurerm_nat_gateway.aks_blue_user_az[each.key].id
+  public_ip_prefix_id = azurerm_public_ip_prefix.nat_outbound_aks_blue_user_az[each.key].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "aks_blue_user_az" {
+  for_each       = toset(["1", "2", "3"])
+  subnet_id      = azurerm_subnet.aks_blue_node_user_az[each.key].id
+  nat_gateway_id = azurerm_nat_gateway.aks_blue_user_az[each.key].id
+}
+
+resource "azurerm_public_ip_prefix" "nat_outbound_aks_green_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ippre-nat-outbound-aks-green-az${each.key}"
+  location            = azurerm_resource_group.shared.location
+  resource_group_name = azurerm_resource_group.shared.name
+  prefix_length       = 30
+  zones               = [each.key]
+}
+
+resource "azurerm_nat_gateway" "aks_green_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ng-aks-green-user-az${each.key}"
+  location            = azurerm_resource_group.shared.location
+  resource_group_name = azurerm_resource_group.shared.name
+  sku_name            = "Standard"
+}
+
+resource "azurerm_nat_gateway_public_ip_prefix_association" "aks_green_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  nat_gateway_id      = azurerm_nat_gateway.aks_green_user_az[each.key].id
+  public_ip_prefix_id = azurerm_public_ip_prefix.nat_outbound_aks_green_user_az[each.key].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "aks_green_user_az" {
+  for_each       = toset(["1", "2", "3"])
+  subnet_id      = azurerm_subnet.aks_green_node_user_az[each.key].id
+  nat_gateway_id = azurerm_nat_gateway.aks_green_user_az[each.key].id
 }
 
 resource "random_password" "redis_password" {

@@ -9,6 +9,6 @@ shared_rg = {
 }
 
 demoapp_svc_ips = {
-  blue  = "10.1.65.4",
-  green = "10.1.67.4",
+  blue  = "10.1.68.4",
+  green = "10.1.73.4",
 }

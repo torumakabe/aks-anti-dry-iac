@@ -188,8 +188,8 @@ Then, comment out the Service IP of Blue and apply it.
 
 ```HCL
 demoapp_svc_ips = {
-  # blue  = "10.1.33.4",
-  green = "10.1.35.4",
+  # blue  = "10.1.68.4",
+  green = "10.1.73.4",
 }
 ```
 
