@@ -30,7 +30,7 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 Prerequisites & tested
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.1.9
-  - hashicorp/azurerm: 3.5.0
+  - hashicorp/azurerm: 3.6.0
   - hashicorp/kubernetes: 2.11
   - State store: Local
 - [TFLint](https://github.com/terraform-linters/tflint): 0.36.2

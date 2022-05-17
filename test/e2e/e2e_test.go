@@ -274,7 +274,7 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 	clusterSwitch := sl[len(sl)-1]
 
 	waitOnce.Do(func() {
-		s := 30 * time.Second
+		s := 60 * time.Second
 		t.Logf("%s wait %v to avoid conflictling shared resource operations like VNet", clusterSwitch, s)
 		time.Sleep(s)
 	})
