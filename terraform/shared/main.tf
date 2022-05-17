@@ -6,7 +6,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.5.0"
+      version = "~> 3.6.0"
     }
 
     random = {
@@ -275,6 +275,7 @@ resource "azurerm_application_gateway" "shared" {
     http_listener_name         = local.demoapp.agw_settings.listener_name
     backend_address_pool_name  = local.demoapp.agw_settings.backend_address_pool_name
     backend_http_settings_name = local.demoapp.agw_settings.http_setting_name
+    priority                   = 100
   }
 }
 
