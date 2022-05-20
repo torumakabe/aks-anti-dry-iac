@@ -49,6 +49,7 @@ Prerequisites & tested
     - For execution of Flux
 - GitHub Actions CI (Azure Service Principal)
   - Azure Subscription Reader (Azure role)
+  - [Using OIDC auth for Terraform](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_oidc)
 
 In this sample, assigned strong privileges to admin so that you can try it smoothly for your PoC. In your actual operation, please be aware of the least privilege and fine-grained scope for you.
 
@@ -77,7 +78,6 @@ The policy of this sample for variables such as IDs and secrets is as follows.
         - ARM_TENANT_ID: Azure AD Tenant ID
         - ARM_SUBSCRIPTION_ID: Azure Subscription ID
         - ARM_CLIENT_ID: Service Principal Client ID
-        - ARM_CLIENT_SECRET: Service Principal Client Secret
 
 You have to prepare the following variables for each envs(e.g dev, prod).
 
