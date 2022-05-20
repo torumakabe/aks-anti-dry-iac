@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.1.9"
+  required_version = "~> 1.2.0"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.6.0"
+      version = "~> 3.7.0"
     }
 
     random = {
@@ -81,6 +81,7 @@ module "subnet_addrs" {
 }
 
 provider "azurerm" {
+  use_oidc = true
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
