@@ -191,6 +191,11 @@ resource "azurerm_subnet" "aci" {
       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
+
+  // Waiting for delegation
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
 }
 
 resource "azurerm_network_profile" "aci_demoapp_redis" {
