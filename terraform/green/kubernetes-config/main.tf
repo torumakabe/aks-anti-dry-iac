@@ -47,36 +47,38 @@ resource "kubernetes_config_map" "oms_agent" {
 
   data = {
     schema-version                           = "v1"
-    config-version                           = "ver1"
+    config-version                           = "v1"
     log-data-collection-settings             = <<EOT
 [log_collection_settings]
-   [log_collection_settings.stdout]
-      enabled = true
-      exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
-   [log_collection_settings.stderr]
-      enabled = true
-      exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
-   [log_collection_settings.env_var]
-      enabled = true
-   [log_collection_settings.enrich_container_logs]
-      enabled = false
-   [log_collection_settings.collect_all_kube_events]
-      enabled = false
+  [log_collection_settings.stdout]
+    enabled = true
+    exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
+  [log_collection_settings.stderr]
+    enabled = true
+    exclude_namespaces = ["kube-system", "calico-system", "tigera-operator"]
+  [log_collection_settings.env_var]
+    enabled = true
+  [log_collection_settings.enrich_container_logs]
+    enabled = false
+  [log_collection_settings.collect_all_kube_events]
+    enabled = false
+  [log_collection_settings.schema]
+    containerlog_schema_version = "v2"
 EOT
     alertable-metrics-configuration-settings = <<EOT
 [alertable_metrics_configuration_settings.container_resource_utilization_thresholds]
-    container_memory_working_set_threshold_percentage = 80.0
+  container_memory_working_set_threshold_percentage = 80.0
 [alertable_metrics_configuration_settings.pv_utilization_thresholds]
-    pv_usage_threshold_percentage = 80.0
+  pv_usage_threshold_percentage = 80.0
 EOT
     prometheus-data-collection-settings      = <<EOT
 [prometheus_data_collection_settings.node]
-    interval = "1m"
-    urls = ["http://$NODE_IP:19100/metrics"]
+  interval = "1m"
+  urls = ["http://$NODE_IP:19100/metrics"]
 EOT
     metric_collection_settings               = <<EOT
 [metric_collection_settings.collect_kube_system_pv_metrics]
-    enabled = true
+  enabled = true
 EOT
   }
 }
