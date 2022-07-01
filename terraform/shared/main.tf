@@ -89,6 +89,10 @@ provider "azurerm" {
   }
 }
 
+data "http" "my_public_ip" {
+  url = "https://ipconfig.io"
+}
+
 resource "azurerm_resource_group" "shared" {
   name     = local.shared_rg.name
   location = local.shared_rg.location
@@ -407,12 +411,11 @@ resource "azurerm_key_vault" "demoapp" {
   tenant_id           = local.tenant_id
   sku_name            = "standard"
 
-  /* If you could exec Terraform in private network can reach kv private endpoint
   network_acls {
     bypass         = "None"
     default_action = "Deny"
+    ip_rules       = [chomp(data.http.my_public_ip.body)]
   }
-  */
 }
 
 resource "azurerm_key_vault_access_policy" "demoapp_admin" {
