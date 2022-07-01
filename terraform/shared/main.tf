@@ -1,17 +1,17 @@
 terraform {
-  required_version = "~> 1.2.2"
+  required_version = "~> 1.2.4"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.10.0"
+      version = "~> 3.12.0"
     }
 
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.1"
+      version = "~> 3.3"
     }
   }
 }
@@ -87,6 +87,10 @@ provider "azurerm" {
       prevent_deletion_if_contains_resources = false
     }
   }
+}
+
+data "http" "my_public_ip" {
+  url = "https://ipconfig.io"
 }
 
 resource "azurerm_resource_group" "shared" {
@@ -364,7 +368,7 @@ resource "azurerm_container_group" "demoapp_redis" {
 
   container {
     name   = "redis"
-    image  = "bitnami/redis:6.2.6"
+    image  = "bitnami/redis:7.0.2"
     cpu    = "1.0"
     memory = "1.0"
 
@@ -407,12 +411,11 @@ resource "azurerm_key_vault" "demoapp" {
   tenant_id           = local.tenant_id
   sku_name            = "standard"
 
-  /* If you could exec Terraform in private network can reach kv private endpoint
   network_acls {
     bypass         = "None"
     default_action = "Deny"
+    ip_rules       = [chomp(data.http.my_public_ip.body)]
   }
-  */
 }
 
 resource "azurerm_key_vault_access_policy" "demoapp_admin" {
