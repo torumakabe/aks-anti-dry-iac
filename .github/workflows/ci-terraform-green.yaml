@@ -42,7 +42,7 @@ jobs:
           echo "::set-output name=DIFF_LOG::$DIFF_LOG"
 
       - name: "Create comment for PR (diff Terraform files between Blue & Green)"
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         env:
           DIFF: "${{ steps.diff.outputs.DIFF_LOG }}"
         with:
@@ -105,7 +105,7 @@ jobs:
         continue-on-error: true
 
       - name: "Create comment for PR (Terraform fmt/init/validate/plan)"
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         env:
           PLAN: "${{ steps.plan.outputs.stdout }}\n${{ steps.plan.outputs.stderr }}"
         with:
