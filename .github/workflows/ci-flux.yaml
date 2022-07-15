@@ -37,7 +37,7 @@ jobs:
           echo "::set-output name=DIFF_LOG::$DIFF_LOG"
 
       - name: "Create comment for PR (diff flux files between Blue & Green)"
-        uses: actions/github-script@v5
+        uses: actions/github-script@v6
         env:
           DIFF: "${{ steps.diff.outputs.DIFF_LOG }}"
         with:
