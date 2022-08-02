@@ -49,8 +49,8 @@ github.com/hashicorp/go-version v1.6.0 h1:feTTfFNnjP967rlCxM/I9g701jU+RN74YKx2mO
 github.com/hashicorp/go-version v1.6.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/hc-install v0.4.0 h1:cZkRFr1WVa0Ty6x5fTvL1TuO1flul231rWkGH92oYYk=
 github.com/hashicorp/hc-install v0.4.0/go.mod h1:5d155H8EC5ewegao9A4PUTMNPZaq+TbOzkJJZ4vrXeI=
-github.com/hashicorp/terraform-exec v0.17.1 h1:Hd7Z0WfPYiwFZwzczSnkCJCxOensv0x93Zq9KhkPfQA=
-github.com/hashicorp/terraform-exec v0.17.1/go.mod h1:0J3KZWwroWCS+ObFZMEUSMD9GztU+CS8eLnUm+vfl5k=
+github.com/hashicorp/terraform-exec v0.17.2 h1:EU7i3Fh7vDUI9nNRdMATCEfnm9axzTnad8zszYZ73Go=
+github.com/hashicorp/terraform-exec v0.17.2/go.mod h1:tuIbsL2l4MlwwIZx9HPM+LOV9vVyEfBYu2GsO1uH3/8=
 github.com/hashicorp/terraform-json v0.14.0 h1:sh9iZ1Y8IFJLx+xQiKHGud6/TSUCM0N8e17dKDpqV7s=
 github.com/hashicorp/terraform-json v0.14.0/go.mod h1:5A9HIWPkk4e5aeeXIBbkcOvaZbIYnAIkEyqP2pNSckM=
 github.com/imdario/mergo v0.3.12 h1:b6R2BslTbIEToALKP7LxUvijTsNI9TAe80pLWN2g/HU=
