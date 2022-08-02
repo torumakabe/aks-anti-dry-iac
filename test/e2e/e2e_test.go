@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/cookiejar"
 	"net/netip"
 	"os"
@@ -198,6 +199,14 @@ func checkEnv(t *testing.T) error {
 		return fmt.Errorf("You must export GITHUB_USER")
 	}
 
+	// check login status
+	cmd := exec.Command("az", "account", "list-locations")
+	_ = cmd.Run()
+	exitCode := cmd.ProcessState.ExitCode()
+	if exitCode != 0 {
+		return fmt.Errorf("You must login to Azure with Azure CLI")
+	}
+
 	return nil
 }
 
@@ -381,10 +390,15 @@ func testPodCardinarity(t *testing.T, config *endpointTestConfig) error {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 50
 	retryClient.Logger = nil
+	standardClient := retryClient.StandardClient()
 
 	// Wait until Pod cardinarity reaches the expected value with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), config.prepTimeout)
 	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
 
 	hostSet := make(map[string]struct{})
 loop:
@@ -393,7 +407,7 @@ loop:
 		case <-ctx.Done():
 			return fmt.Errorf("tried for %s but did not reach the specified cardinarity of pods: %d / %d", config.prepTimeout, len(hostSet), config.cardinarity)
 		default:
-			resp, err := retryClient.Get(url)
+			resp, err := standardClient.Do(req)
 			if err != nil {
 				return err
 			}
@@ -428,7 +442,7 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 
 	url := fmt.Sprintf("http://%s/incr", config.IP.String())
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 50
+	retryClient.RetryMax = 10
 	retryClient.Logger = nil
 	standardClient := retryClient.StandardClient()
 	jar, _ := cookiejar.New(nil)
