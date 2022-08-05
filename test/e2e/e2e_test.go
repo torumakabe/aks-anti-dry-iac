@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/netip"
@@ -401,19 +402,24 @@ func testPodCardinarity(t *testing.T, config *endpointTestConfig) error {
 	}
 
 	hostSet := make(map[string]struct{})
+	timeout := time.After(config.prepTimeout)
+	t.Logf("Waiting until the endpoint is ready. Timeout in %s", config.prepTimeout)
 loop:
 	for i := 0; ; i++ {
 		select {
-		case <-ctx.Done():
+		case <-timeout:
 			return fmt.Errorf("tried for %s but did not reach the specified cardinarity of pods: %d / %d", config.prepTimeout, len(hostSet), config.cardinarity)
 		default:
 			resp, err := standardClient.Do(req)
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) && i == 0 {
+					return fmt.Errorf("tried to connect for %s but faild. maybe appgw/backend is not ready", config.prepTimeout)
+				}
 				return err
 			}
 			defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
@@ -448,15 +454,12 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 	jar, _ := cookiejar.New(nil)
 	standardClient.Jar = jar
 
-	// Set test duration
-	ctx, cancel := context.WithTimeout(context.Background(), config.testDuration)
-	defer cancel()
-
+	timeout := time.After(config.testDuration)
 	t.Logf("Session test started. The duration is %s", config.testDuration)
 	var countMemo int
 	for i := 0; ; i++ {
 		select {
-		case <-ctx.Done():
+		case <-timeout:
 			t.Logf("Got the expected response successfully for %s", config.testDuration)
 			return nil
 		default:
@@ -466,7 +469,7 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 			}
 			defer resp.Body.Close()
 
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return err
 			}
