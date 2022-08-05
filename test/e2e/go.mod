@@ -1,6 +1,6 @@
 module github.com/ToruMakabe/aks-playground/test/e2e
 
-go 1.18
+go 1.19
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.1
