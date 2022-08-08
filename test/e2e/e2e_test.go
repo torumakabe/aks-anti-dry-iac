@@ -228,7 +228,7 @@ func installTF(t *testing.T) (string, error) {
 
 	execPath, err := installer.Install(context.Background())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("install tf: %w", err)
 	}
 
 	return execPath, nil
@@ -239,22 +239,22 @@ func setupShared(t *testing.T, workingDir, execPath, varFile string) (string, er
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("new tf: %w", err)
 	}
 
 	err = tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("tf init: %w", err)
 	}
 
 	err = tf.Apply(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("tf apply: %w", err)
 	}
 
 	state, err := tf.Show(context.Background())
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("tf show: %w", err)
 	}
 
 	return state.Values.Outputs["demoapp_public_endpoint_ip"].Value.(string), nil
@@ -265,12 +265,12 @@ func destroyShared(t *testing.T, workingDir, execPath, varFile string) error {
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("new tf: %w", err)
 	}
 
 	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		return err
+		return fmt.Errorf("tf destroy: %w", err)
 	}
 
 	return nil
@@ -291,22 +291,22 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("new tf: %w", err)
 	}
 
 	err = tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("tf init: %w", err)
 	}
 
 	err = tf.Apply(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("tf apply: %w", err)
 	}
 
 	state, err := tf.Show(context.Background())
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("tf show: %w", err)
 	}
 
 	rgName := state.Values.Outputs["resource_group_name"].Value.(string)
@@ -322,7 +322,7 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 	if err != nil {
 		t.Log(outb.String())
 		t.Log(errb.String())
-		return "", "", err
+		return "", "", fmt.Errorf("exec flux setup: %w", err)
 	}
 
 	return rgName, clusterName, nil
@@ -334,12 +334,12 @@ func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("new tf: %w", err)
 	}
 
 	err = tf.Destroy(context.Background(), tfexec.VarFile(varFile))
 	if err != nil {
-		return err
+		return fmt.Errorf("tf destroy: %w", err)
 	}
 
 	return nil
@@ -398,7 +398,7 @@ func testPodCardinarity(t *testing.T, config *endpointTestConfig) error {
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("new http req: %w", err)
 	}
 
 	hostSet := make(map[string]struct{})
@@ -415,19 +415,19 @@ loop:
 				if errors.Is(err, context.DeadlineExceeded) && i == 0 {
 					return fmt.Errorf("tried to connect for %s but faild. maybe appgw/backend is not ready", config.prepTimeout)
 				}
-				return err
+				return fmt.Errorf("get endpoint: %w", err)
 			}
 			defer resp.Body.Close()
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				return err
+				return fmt.Errorf("read body: %w", err)
 			}
 
 			var r ResponseBodyIncr
 			err = json.Unmarshal(body, &r)
 			if err != nil {
-				return err
+				return fmt.Errorf("unmarshal body: %w", err)
 			}
 			hostSet[r.Hostname] = struct{}{}
 			if len(hostSet) == config.cardinarity {
@@ -465,19 +465,19 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 		default:
 			resp, err := standardClient.Get(url)
 			if err != nil {
-				return err
+				return fmt.Errorf("get endpoint: %w", err)
 			}
 			defer resp.Body.Close()
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				return err
+				return fmt.Errorf("read body: %w", err)
 			}
 
 			var r ResponseBodyIncr
 			err = json.Unmarshal(body, &r)
 			if err != nil {
-				return err
+				return fmt.Errorf("unmarshal body: %w", err)
 			}
 
 			if i == 0 {
@@ -535,7 +535,7 @@ func injectChaos(t *testing.T, config *endpointTestConfig, clusters map[string]a
 			if err != nil {
 				t.Log(outb.String())
 				t.Log(errb.String())
-				return err
+				return fmt.Errorf("inject fault: %w", err)
 			}
 			t.Logf("Applied manifest %s to %s successfully", manifest, v.clusterName)
 			time.Sleep(interval)
