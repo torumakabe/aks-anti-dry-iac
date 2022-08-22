@@ -46,3 +46,5 @@ terraform.rc
 .terraform.lock.hcl
 
 cookie.txt
+
+tmp/
