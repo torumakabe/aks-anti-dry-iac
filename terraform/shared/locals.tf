@@ -29,8 +29,16 @@ locals {
     }
     key_vault = {
       name = "${var.prefix}-kv-demoapp-${var.suffix}"
+      // add as needed
+      ip_rules = [
+        chomp(data.http.my_public_ip.response_body)
+      ]
     }
   }
 }
 
 data "azurerm_client_config" "current" {}
+
+data "http" "my_public_ip" {
+  url = "https://ipconfig.io"
+}

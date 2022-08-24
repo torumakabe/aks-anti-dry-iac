@@ -70,6 +70,35 @@ resource "azurerm_role_assignment" "aks_node_subnet_az" {
   }
 }
 
+resource "azurerm_public_ip_prefix" "nat_outbound_aks_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ippre-nat-outbound-aks-az${each.key}"
+  location            = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
+  prefix_length       = 30
+  zones               = [each.key]
+}
+
+resource "azurerm_nat_gateway" "aks_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  name                = "ng-aks-user-az${each.key}"
+  location            = azurerm_resource_group.aks.location
+  resource_group_name = azurerm_resource_group.aks.name
+  sku_name            = "Standard"
+}
+
+resource "azurerm_nat_gateway_public_ip_prefix_association" "aks_user_az" {
+  for_each            = toset(["1", "2", "3"])
+  nat_gateway_id      = azurerm_nat_gateway.aks_user_az[each.key].id
+  public_ip_prefix_id = azurerm_public_ip_prefix.nat_outbound_aks_user_az[each.key].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "aks_user_az" {
+  for_each       = toset(["1", "2", "3"])
+  subnet_id      = "${local.aks.network.node_user_az_subnet_id_prefix}${each.key}"
+  nat_gateway_id = azurerm_nat_gateway.aks_user_az[each.key].id
+}
+
 resource "azurerm_role_assignment" "aks_subnet_svc_lb" {
   scope                = local.aks.network.svc_lb_subnet_id
   role_definition_name = "Network Contributor"
@@ -98,6 +127,13 @@ resource "azurerm_kubernetes_cluster" "default" {
   dns_prefix             = local.aks.cluster_name
   sku_tier               = "Paid"
   local_account_disabled = true
+  // add as needed
+  api_server_authorized_ip_ranges = [
+    "${chomp(data.http.my_public_ip.response_body)}/32",
+    azurerm_public_ip_prefix.nat_outbound_aks_user_az["1"].ip_prefix,
+    azurerm_public_ip_prefix.nat_outbound_aks_user_az["2"].ip_prefix,
+    azurerm_public_ip_prefix.nat_outbound_aks_user_az["3"].ip_prefix
+  ]
 
   default_node_pool {
     name = "system"

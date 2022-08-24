@@ -89,10 +89,6 @@ provider "azurerm" {
   }
 }
 
-data "http" "my_public_ip" {
-  url = "https://ipconfig.io"
-}
-
 resource "azurerm_resource_group" "shared" {
   name     = local.shared_rg.name
   location = local.shared_rg.location
@@ -174,11 +170,10 @@ resource "azurerm_subnet" "appgw" {
 }
 
 resource "azurerm_subnet" "endpoint" {
-  name                                           = "snet-endpoint"
-  resource_group_name                            = azurerm_resource_group.shared.name
-  virtual_network_name                           = azurerm_virtual_network.default.name
-  address_prefixes                               = [module.subnet_addrs.network_cidr_blocks["endpoint"]]
-  enforce_private_link_endpoint_network_policies = true
+  name                 = "snet-endpoint"
+  resource_group_name  = azurerm_resource_group.shared.name
+  virtual_network_name = azurerm_virtual_network.default.name
+  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["endpoint"]]
 }
 
 resource "azurerm_subnet" "aci" {
@@ -289,64 +284,6 @@ resource "azurerm_application_gateway" "shared" {
   }
 }
 
-resource "azurerm_public_ip_prefix" "nat_outbound_aks_blue_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  name                = "ippre-nat-outbound-aks-blue-az${each.key}"
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-  prefix_length       = 30
-  zones               = [each.key]
-}
-
-resource "azurerm_nat_gateway" "aks_blue_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  name                = "ng-aks-blue-user-az${each.key}"
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-  sku_name            = "Standard"
-}
-
-resource "azurerm_nat_gateway_public_ip_prefix_association" "aks_blue_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  nat_gateway_id      = azurerm_nat_gateway.aks_blue_user_az[each.key].id
-  public_ip_prefix_id = azurerm_public_ip_prefix.nat_outbound_aks_blue_user_az[each.key].id
-}
-
-resource "azurerm_subnet_nat_gateway_association" "aks_blue_user_az" {
-  for_each       = toset(["1", "2", "3"])
-  subnet_id      = azurerm_subnet.aks_blue_node_user_az[each.key].id
-  nat_gateway_id = azurerm_nat_gateway.aks_blue_user_az[each.key].id
-}
-
-resource "azurerm_public_ip_prefix" "nat_outbound_aks_green_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  name                = "ippre-nat-outbound-aks-green-az${each.key}"
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-  prefix_length       = 30
-  zones               = [each.key]
-}
-
-resource "azurerm_nat_gateway" "aks_green_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  name                = "ng-aks-green-user-az${each.key}"
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-  sku_name            = "Standard"
-}
-
-resource "azurerm_nat_gateway_public_ip_prefix_association" "aks_green_user_az" {
-  for_each            = toset(["1", "2", "3"])
-  nat_gateway_id      = azurerm_nat_gateway.aks_green_user_az[each.key].id
-  public_ip_prefix_id = azurerm_public_ip_prefix.nat_outbound_aks_green_user_az[each.key].id
-}
-
-resource "azurerm_subnet_nat_gateway_association" "aks_green_user_az" {
-  for_each       = toset(["1", "2", "3"])
-  subnet_id      = azurerm_subnet.aks_green_node_user_az[each.key].id
-  nat_gateway_id = azurerm_nat_gateway.aks_green_user_az[each.key].id
-}
-
 resource "random_password" "redis_password" {
   length  = 16
   special = true
@@ -414,7 +351,7 @@ resource "azurerm_key_vault" "demoapp" {
   network_acls {
     bypass         = "None"
     default_action = "Deny"
-    ip_rules       = [chomp(data.http.my_public_ip.body)]
+    ip_rules       = local.demoapp.key_vault.ip_rules
   }
 }
 
@@ -449,6 +386,7 @@ resource "azurerm_key_vault_secret" "demoapp_redis_server" {
   name         = "redis-server"
   value        = "${azurerm_private_dns_a_record.demoapp_redis.fqdn}:6379"
   key_vault_id = azurerm_key_vault.demoapp.id
+  content_type = "text/plain"
 }
 
 resource "azurerm_key_vault_secret" "demoapp_redis_password" {
@@ -458,6 +396,7 @@ resource "azurerm_key_vault_secret" "demoapp_redis_password" {
   name         = "redis-password"
   value        = random_password.redis_password.result
   key_vault_id = azurerm_key_vault.demoapp.id
+  content_type = "text/plain"
 }
 
 
