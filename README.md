@@ -31,7 +31,7 @@ Prerequisites & tested
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.2.7
   - hashicorp/azurerm: 3.19.1
-  - hashicorp/kubernetes: 2.12
+  - hashicorp/kubernetes: 2.13
   - State store: Local
 - [TFLint](https://github.com/terraform-linters/tflint): 0.39.3
 - [Flux(v2)](https://fluxcd.io/docs/): 0.32.0
