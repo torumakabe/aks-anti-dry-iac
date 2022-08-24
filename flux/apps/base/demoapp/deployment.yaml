@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: session-checker
-        image: ghcr.io/torumakabe/session-checker:v1.2.10 # {"$imagepolicy": "flux-system:session-checker"}
+        image: ghcr.io/torumakabe/session-checker:v1.2.12 # {"$imagepolicy": "flux-system:session-checker"}
         imagePullPolicy: IfNotPresent
         command: ["/session-checker"]
         volumeMounts:
@@ -44,6 +44,22 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsUser: 10001
+          runAsGroup: 10001
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
       volumes:
       - name: secrets-store01-inline
         csi:
@@ -52,3 +68,6 @@ spec:
           volumeAttributes:
             secretProviderClass: "azure-sync"
       dnsPolicy: "Default"
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

@@ -36,3 +36,7 @@ locals {
 }
 
 data "azurerm_client_config" "current" {}
+
+data "http" "my_public_ip" {
+  url = "https://ipconfig.io"
+}
