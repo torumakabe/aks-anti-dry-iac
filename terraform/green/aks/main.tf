@@ -18,7 +18,7 @@ resource "azurerm_resource_group" "aks" {
 /*
 data "azurerm_kubernetes_service_versions" "current" {
   location        = azurerm_resource_group.aks.location
-  version_prefix  = "1.23"
+  version_prefix  = "1.24"
   include_preview = false
 }
 */
