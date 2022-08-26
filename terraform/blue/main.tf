@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.2.7"
+  required_version = "~> 1.2.8"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.19.1"
+      version = "~> 3.20.0"
     }
 
     kubernetes = {
@@ -25,31 +25,15 @@ provider "azurerm" {
   }
 }
 
-// temporarily replace aks data source with external data source
-// issue: https://github.com/hashicorp/terraform-provider-azurerm/issues/17182
-/*
 data "azurerm_kubernetes_cluster" "default" {
   depends_on          = [module.aks] # refresh cluster state before reading
   name                = module.aks.aks_cluster_name
   resource_group_name = module.aks.resource_group_name
 }
-*/
-
-data "external" "cluster_info" {
-  depends_on = [
-    module.aks,
-  ]
-  program = ["/bin/bash", "-c", "${path.module}/scripts/get_clusterinfo.sh"]
-
-  query = {
-    rg_name      = local.aks.rg.name
-    cluster_name = local.aks.cluster_name
-  }
-}
 
 provider "kubernetes" {
-  host                   = data.external.cluster_info.result["server"]
-  cluster_ca_certificate = base64decode(data.external.cluster_info.result["cert_auth_data"])
+  host                   = data.azurerm_kubernetes_cluster.default.kube_config.0.host
+  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.default.kube_config.0.cluster_ca_certificate)
 
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
