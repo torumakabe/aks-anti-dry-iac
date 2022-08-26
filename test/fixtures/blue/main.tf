@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.2.7"
+  required_version = "~> 1.2.8"
 }
 
 module "blue" {
