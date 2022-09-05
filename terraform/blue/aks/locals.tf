@@ -12,7 +12,7 @@ locals {
     cluster_name = "${var.prefix}-aks-anti-dry-iac-${var.aks.switch}-${var.suffix}"
     default = {
       orchestrator_version = "1.24.3"
-      vm_size              = "Standard_D2ds_v4"
+      vm_size              = "Standard_D2ds_v5"
       os_disk_size_gb      = 30
       os_disk_type         = "Ephemeral"
       os_sku               = "Ubuntu"
