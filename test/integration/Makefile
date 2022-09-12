@@ -1,5 +1,7 @@
 SHELL=/bin/bash
 
+export TFLINT_LOG := "info"
+
 .PHONY: test
 test: test-all
 
@@ -99,7 +101,7 @@ validate-green:
 define LINT
 	tflint --init \
 	&& pushd ../fixtures/${1} \
-	&& tflint --config ../../integration/.tflint.hcl --module --var-file=integration.tfvars --loglevel=info --no-color -f compact \
+	&& tflint --config ../../integration/.tflint.hcl --module --var-file=integration.tfvars --no-color -f compact \
 	&& popd
 
 endef
