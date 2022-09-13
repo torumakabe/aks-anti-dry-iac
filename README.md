@@ -151,7 +151,7 @@ You can join/remove services of each cluster to/from backend addresses of Applic
 
 This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./terraform/blue/dev.tfvars).
 
-There are [sample app](https://github.com/ToruMakabe/session-checker) and [test script](./test/tools/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
+There are [sample app](https://github.com/torumakabe/session-checker) and [test script](./test/tools/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
 
 If you have both Blue and Green joined in the backend, then:
 
