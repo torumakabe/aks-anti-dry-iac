@@ -1,4 +1,4 @@
-module github.com/ToruMakabe/aks-anti-dry-iac/test/e2e
+module github.com/torumakabe/aks-anti-dry-iac/test/e2e
 
 go 1.19
 
