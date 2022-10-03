@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-TF_VERSION := 1.3.0
+TF_VERSION := 1.3.1
 FLUX_REPO_URL := https://github.com/torumakabe/aks-anti-dry-iac.git
 # Make sure you pushed the branch under development if you modified /flux
 FLUX_BRANCH := main
@@ -14,15 +14,15 @@ test: test-all
 
 .PHONY: test-blue
 test-blue:
-	go test -v -run TestE2E -timeout 60m0s -scope blue -tf-version ${TF_VERSION} -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 90m0s -scope blue -tf-version ${TF_VERSION} -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
 
 .PHONY: test-green
 test-green:
-	go test -v -run TestE2E -timeout 60m0s -scope green -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 90m0s -scope green -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
 
 .PHONY: test-all
 test-all:
-	go test -v -run TestE2E -timeout 60m0s -scope all -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 90m0s -scope all -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
 
 
 define CLEAN
