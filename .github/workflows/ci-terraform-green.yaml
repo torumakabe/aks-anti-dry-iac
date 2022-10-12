@@ -39,7 +39,7 @@ jobs:
           DIFF_LOG="${DIFF_LOG//'%'/'%25'}"
           DIFF_LOG="${DIFF_LOG//$'\n'/'%0A'}"
           DIFF_LOG="${DIFF_LOG//$'\r'/'%0D'}"
-          echo "::set-output name=DIFF_LOG::$DIFF_LOG"
+          echo "DIFF_LOG=${DIFF_LOG}" >> $GITHUB_OUTPUT
 
       - name: "Create comment for PR (diff Terraform files between Blue & Green)"
         uses: actions/github-script@v6
