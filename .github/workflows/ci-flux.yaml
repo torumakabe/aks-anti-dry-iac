@@ -29,17 +29,14 @@ jobs:
         shell: bash -x {0}
         continue-on-error: true
         run: |
-          ./diff-flux.sh > ./diff.log
-          DIFF_LOG=$(cat ./diff.log)
-          DIFF_LOG="${DIFF_LOG//'%'/'%25'}"
-          DIFF_LOG="${DIFF_LOG//$'\n'/'%0A'}"
-          DIFF_LOG="${DIFF_LOG//$'\r'/'%0D'}"
-          echo "DIFF_LOG=${DIFF_LOG}" >> $GITHUB_OUTPUT
+          echo 'DIFF_LOG<<EOF' >> $GITHUB_ENV
+          ./diff-flux.sh >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
 
       - name: "Create comment for PR (diff flux files between Blue & Green)"
         uses: actions/github-script@v6
         env:
-          DIFF: "${{ steps.diff.outputs.DIFF_LOG }}"
+          DIFF: "${{ env.DIFF_LOG }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

@@ -9,36 +9,6 @@ terraform {
   }
 }
 
-resource "kubernetes_cluster_role" "log_reader" {
-  metadata {
-    name = "containerhealth-log-reader"
-  }
-
-  rule {
-    api_groups = ["", "metrics.k8s.io", "extensions", "apps"]
-    resources  = ["pods/log", "events", "nodes", "pods", "deployments", "replicasets"]
-    verbs      = ["get", "list"]
-  }
-}
-
-resource "kubernetes_cluster_role_binding" "log_reader" {
-  metadata {
-    name = "containerhealth-read-logs-global"
-  }
-
-  role_ref {
-    kind      = "ClusterRole"
-    name      = "containerhealth-log-reader"
-    api_group = "rbac.authorization.k8s.io"
-  }
-
-  subject {
-    kind      = "User"
-    name      = "clusterUser"
-    api_group = "rbac.authorization.k8s.io"
-  }
-}
-
 resource "kubernetes_config_map" "oms_agent" {
   metadata {
     name      = "container-azm-ms-agentconfig"
