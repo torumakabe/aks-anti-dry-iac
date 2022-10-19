@@ -17,7 +17,8 @@ terraform {
 }
 
 provider "azurerm" {
-  use_oidc = true
+  use_oidc                   = true
+  skip_provider_registration = true
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
@@ -61,7 +62,9 @@ module "aks" {
 }
 
 module "kubernetes-config" {
-  source = "./kubernetes-config"
+  # workaround for https://github.com/hashicorp/terraform-provider-kubernetes/issues/1867
+  depends_on = [module.aks]
+  source     = "./kubernetes-config"
   aks = {
     switch = var.aks.switch
     rg = {
