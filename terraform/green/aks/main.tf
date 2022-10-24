@@ -6,8 +6,14 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.27.0"
     }
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 1.0.0"
+    }
   }
 }
+
+provider "azapi" {}
 
 resource "azurerm_resource_group" "aks" {
   name     = local.aks.rg.name
@@ -120,13 +126,15 @@ resource "azurerm_kubernetes_cluster" "default" {
   name = local.aks.cluster_name
   # Optional: To keep up with the latest version
   # kubernetes_version  = data.azurerm_kubernetes_service_versions.current.latest_version
-  kubernetes_version     = local.aks.default.orchestrator_version
-  location               = azurerm_resource_group.aks.location
-  resource_group_name    = azurerm_resource_group.aks.name
-  node_resource_group    = "${azurerm_resource_group.aks.name}-node"
-  dns_prefix             = local.aks.cluster_name
-  sku_tier               = "Paid"
-  local_account_disabled = true
+  kubernetes_version        = local.aks.default.orchestrator_version
+  location                  = azurerm_resource_group.aks.location
+  resource_group_name       = azurerm_resource_group.aks.name
+  node_resource_group       = "${azurerm_resource_group.aks.name}-node"
+  dns_prefix                = local.aks.cluster_name
+  sku_tier                  = "Paid"
+  local_account_disabled    = true
+  workload_identity_enabled = true
+  oidc_issuer_enabled       = true
   // add as needed
   api_server_authorized_ip_ranges = [
     "${chomp(data.http.my_public_ip.response_body)}/32",
@@ -198,6 +206,7 @@ resource "azurerm_kubernetes_cluster" "default" {
   lifecycle {
     ignore_changes = [
       default_node_pool[0].node_labels,
+      microsoft_defender,
     ]
   }
 }
@@ -363,14 +372,45 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   }
 }
 
-# may replace with AAD Pod Identiy in the future (judgement by GA timing and maturity)
-resource "azurerm_key_vault_access_policy" "demoapp_kubelet" {
+resource "azurerm_user_assigned_identity" "demoapp" {
+  resource_group_name = azurerm_resource_group.aks.name
+  location            = azurerm_resource_group.aks.location
+  name                = "mi-demoapp"
+}
+
+resource "azurerm_key_vault_access_policy" "demoapp_keyvault" {
   key_vault_id = local.demoapp.key_vault.id
   tenant_id    = local.tenant_id
-  object_id    = azurerm_user_assigned_identity.aks_kubelet.principal_id
+  object_id    = azurerm_user_assigned_identity.demoapp.principal_id
 
   secret_permissions = [
     "Get",
     "List",
   ]
+}
+
+# TODO: Replace with azuread_application_federated_identity_credential resource
+# https://github.com/hashicorp/terraform-provider-azuread/issues/900
+resource "azapi_resource" "federated_identity_credential_dempapp" {
+  schema_validation_enabled = false
+  name                      = "ficred-demoapp"
+  parent_id                 = azurerm_user_assigned_identity.demoapp.id
+  type                      = "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview"
+
+  depends_on = [
+    azurerm_kubernetes_cluster_node_pool.user["1"],
+    azurerm_kubernetes_cluster_node_pool.user["2"],
+    azurerm_kubernetes_cluster_node_pool.user["3"],
+  ]
+  location = azurerm_resource_group.aks.location
+  body = jsonencode({
+    properties = {
+      audiences = ["api://AzureADTokenExchange"]
+      issuer    = azurerm_kubernetes_cluster.default.oidc_issuer_url
+      subject   = "system:serviceaccount:${local.demoapp.service_account.namespace}:${local.demoapp.service_account.name}"
+    }
+  })
+  lifecycle {
+    ignore_changes = [location]
+  }
 }

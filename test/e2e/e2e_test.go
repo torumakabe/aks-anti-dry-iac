@@ -172,7 +172,7 @@ func TestE2E(t *testing.T) {
 	config := &endpointTestConfig{
 		IP:                 endpointIP,
 		cardinarity:        cardinarity,
-		prepTimeout:        10 * time.Minute,
+		prepTimeout:        20 * time.Minute,
 		testDuration:       2 * time.Minute,
 		chaosTestManifests: absManifestPaths,
 	}
@@ -355,13 +355,18 @@ func testEndpoint(t *testing.T, config *endpointTestConfig, clusters map[string]
 	}
 
 	// Test incrementing the count with session
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	readyChan := make(chan struct{})
 	errChan := make(chan error)
 	defer close(errChan)
-	go func() {
-		err := testSession(t, config, readyChan)
-		errChan <- err
-	}()
+	go func(ctx context.Context) {
+		err := testSession(t, ctx, config, readyChan)
+		if !errors.Is(err, errors.New("canceled")) {
+			errChan <- err
+		}
+	}(ctx)
 
 	// Wait until session test setup is ready (readyChan closed) for addtional test
 	_, open := <-readyChan
@@ -443,7 +448,7 @@ loop:
 	return nil
 }
 
-func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct{}) error {
+func testSession(t *testing.T, ctx context.Context, config *endpointTestConfig, readyChan chan struct{}) error {
 	t.Helper()
 
 	url := fmt.Sprintf("http://%s/incr", config.IP.String())
@@ -462,6 +467,8 @@ func testSession(t *testing.T, config *endpointTestConfig, readyChan chan struct
 		case <-timeout:
 			t.Logf("Got the expected response successfully for %s", config.testDuration)
 			return nil
+		case <-ctx.Done():
+			return errors.New("canceled")
 		default:
 			resp, err := standardClient.Get(url)
 			if err != nil {

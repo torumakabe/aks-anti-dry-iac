@@ -8,7 +8,7 @@ variable "aks" {
   })
 }
 
-variable "mi_kubelet_id" {
+variable "mi_demoapp" {
   type = string
 }
 

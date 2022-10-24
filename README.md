@@ -44,8 +44,8 @@ Prerequisites & tested
   - Azure Subscription Owner (Azure role)
     - Need User Access Administrator for role assignment
   - Azure Kubernetes Service Cluster Admin Role (Azure role)
-    - For execution of Flux
-    - If you are an Azure Subscription Owner, a separate assignment is not required
+    - For admin operation & Flux execution
+    - Assign role to Azure AD group and [specify](./terraform/blue/prod.tfvars) it as terrafofm var
   - GitHub Repo control (GitHub PAT)
     - For execution of Flux
 - GitHub Actions CI (Azure Service Principal)

@@ -88,7 +88,7 @@ resource "kubernetes_config_map" "flux_configs" {
 
   data = {
     tenant_id                  = local.tenant_id
-    mi_kubelet_id              = var.mi_kubelet_id
+    mi_demoapp                 = var.mi_demoapp
     demoapp_key_vault_name     = var.demoapp.key_vault.name
     demoapp_ingress_svc_subnet = var.demoapp.ingress_svc.subnet
     demoapp_ingress_svc_ip     = var.demoapp.ingress_svc.ip
