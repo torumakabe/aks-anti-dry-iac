@@ -1,10 +1,10 @@
 terraform {
-  required_version = "~> 1.3.2"
+  required_version = "~> 1.3.3"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.27.0"
+      version = "~> 3.28.0"
     }
     azapi = {
       source  = "azure/azapi"
@@ -33,12 +33,6 @@ resource "azurerm_user_assigned_identity" "aks_cplane" {
   resource_group_name = azurerm_resource_group.aks.name
   location            = azurerm_resource_group.aks.location
   name                = "mi-aks-cplane"
-}
-
-resource "azurerm_user_assigned_identity" "aks_kubelet" {
-  resource_group_name = azurerm_resource_group.aks.name
-  location            = azurerm_resource_group.aks.location
-  name                = "mi-aks-kubelet"
 }
 
 resource "azurerm_role_assignment" "aks_mi_operator" {
@@ -164,12 +158,6 @@ resource "azurerm_kubernetes_cluster" "default" {
   identity {
     type         = "UserAssigned"
     identity_ids = [azurerm_user_assigned_identity.aks_cplane.id]
-  }
-
-  kubelet_identity {
-    client_id                 = azurerm_user_assigned_identity.aks_kubelet.client_id
-    object_id                 = azurerm_user_assigned_identity.aks_kubelet.principal_id
-    user_assigned_identity_id = azurerm_user_assigned_identity.aks_kubelet.id
   }
 
   role_based_access_control_enabled = true
