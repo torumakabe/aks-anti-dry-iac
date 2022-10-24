@@ -72,7 +72,7 @@ module "kubernetes-config" {
     }
     cluster_name = local.aks.cluster_name
   }
-  mi_kubelet_id = module.aks.mi_kubelet_id
+  mi_demoapp = module.aks.mi_demoapp
   demoapp = {
     ingress_svc = {
       subnet = module.aks.svc_lb_subnet_name
