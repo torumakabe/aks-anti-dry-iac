@@ -6,7 +6,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.28.0"
+      version = "~> 3.29.0"
     }
 
     random = {
@@ -198,21 +198,6 @@ resource "azurerm_subnet" "aci" {
   }
 }
 
-resource "azurerm_network_profile" "aci_demoapp_redis" {
-  name                = "nwprof-aci-demoapp-redis"
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-
-  container_network_interface {
-    name = "nic-aci-demoapp-redis"
-
-    ip_configuration {
-      name      = "ipconf-aci-demoapp-redis"
-      subnet_id = azurerm_subnet.aci.id
-    }
-  }
-}
-
 resource "azurerm_public_ip" "demoapp" {
   name                = "pip-demoapp"
   resource_group_name = azurerm_resource_group.shared.name
@@ -296,7 +281,7 @@ resource "azurerm_container_group" "demoapp_redis" {
   location            = azurerm_resource_group.shared.location
   resource_group_name = azurerm_resource_group.shared.name
   ip_address_type     = "Private"
-  network_profile_id  = azurerm_network_profile.aci_demoapp_redis.id
+  subnet_ids          = [azurerm_subnet.aci.id]
   exposed_port {
     port     = 6379
     protocol = "TCP"
@@ -306,7 +291,7 @@ resource "azurerm_container_group" "demoapp_redis" {
 
   container {
     name   = "redis"
-    image  = "bitnami/redis:7.0.2"
+    image  = "bitnami/redis:7.0.5"
     cpu    = "1.0"
     memory = "1.0"
 
