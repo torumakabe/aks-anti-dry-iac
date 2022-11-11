@@ -4,16 +4,10 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.30.0"
-    }
-    azapi = {
-      source  = "azure/azapi"
-      version = "~> 1.0.0"
+      version = "~> 3.31.0"
     }
   }
 }
-
-provider "azapi" {}
 
 resource "azurerm_resource_group" "aks" {
   name     = local.aks.rg.name
@@ -377,28 +371,16 @@ resource "azurerm_key_vault_access_policy" "demoapp_keyvault" {
   ]
 }
 
-# TODO: Replace with azuread_application_federated_identity_credential resource
-# https://github.com/hashicorp/terraform-provider-azuread/issues/900
-resource "azapi_resource" "federated_identity_credential_dempapp" {
-  schema_validation_enabled = false
-  name                      = "ficred-demoapp"
-  parent_id                 = azurerm_user_assigned_identity.demoapp.id
-  type                      = "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview"
-
+resource "azurerm_federated_identity_credential" "dempapp" {
   depends_on = [
     azurerm_kubernetes_cluster_node_pool.user["1"],
     azurerm_kubernetes_cluster_node_pool.user["2"],
     azurerm_kubernetes_cluster_node_pool.user["3"],
   ]
-  location = azurerm_resource_group.aks.location
-  body = jsonencode({
-    properties = {
-      audiences = ["api://AzureADTokenExchange"]
-      issuer    = azurerm_kubernetes_cluster.default.oidc_issuer_url
-      subject   = "system:serviceaccount:${local.demoapp.service_account.namespace}:${local.demoapp.service_account.name}"
-    }
-  })
-  lifecycle {
-    ignore_changes = [location]
-  }
+  name                = "ficred-demoapp"
+  resource_group_name = azurerm_resource_group.aks.name
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.default.oidc_issuer_url
+  parent_id           = azurerm_user_assigned_identity.demoapp.id
+  subject             = "system:serviceaccount:${local.demoapp.service_account.namespace}:${local.demoapp.service_account.name}"
 }
