@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-TF_VERSION := 1.3.5
+TF_VERSION := 1.3.6
 FLUX_REPO_URL := https://github.com/torumakabe/aks-anti-dry-iac.git
 # Make sure you pushed the branch under development if you modified /flux
 FLUX_BRANCH := main
