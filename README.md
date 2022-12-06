@@ -29,8 +29,8 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 Prerequisites & tested
 
-- [Terraform](https://www.terraform.io/docs/index.html): 1.3.5
-  - hashicorp/azurerm: 3.33.0
+- [Terraform](https://www.terraform.io/docs/index.html): 1.3.6
+  - hashicorp/azurerm: 3.34.0
   - hashicorp/kubernetes: 2.16
   - State store: Local
 - [TFLint](https://github.com/terraform-linters/tflint): 0.43.0
