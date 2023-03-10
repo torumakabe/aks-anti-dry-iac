@@ -11,7 +11,8 @@ aks = {
   }
   node_pool = {
     system = {
-      node_count = 3
+      node_count                   = 3
+      only_critical_addons_enabled = true
     }
     user = {
       // one pool per zone

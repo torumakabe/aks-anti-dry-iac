@@ -1,10 +1,10 @@
 terraform {
-  required_version = "~> 1.3.7"
+  required_version = "~> 1.4.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.39.0"
+      version = "~> 3.47.0"
     }
   }
 }
@@ -124,12 +124,14 @@ resource "azurerm_kubernetes_cluster" "default" {
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
   // add as needed
-  api_server_authorized_ip_ranges = [
-    "${chomp(data.http.my_public_ip.response_body)}/32",
-    azurerm_public_ip_prefix.nat_outbound_aks_user_az["1"].ip_prefix,
-    azurerm_public_ip_prefix.nat_outbound_aks_user_az["2"].ip_prefix,
-    azurerm_public_ip_prefix.nat_outbound_aks_user_az["3"].ip_prefix
-  ]
+  api_server_access_profile {
+    authorized_ip_ranges = [
+      "${chomp(data.http.my_public_ip.response_body)}/32",
+      azurerm_public_ip_prefix.nat_outbound_aks_user_az["1"].ip_prefix,
+      azurerm_public_ip_prefix.nat_outbound_aks_user_az["2"].ip_prefix,
+      azurerm_public_ip_prefix.nat_outbound_aks_user_az["3"].ip_prefix
+    ]
+  }
 
   default_node_pool {
     name = "system"
@@ -142,7 +144,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     zones                        = [1, 2, 3]
     node_count                   = var.aks.node_pool.system.node_count
     vm_size                      = local.aks.default.vm_size
-    only_critical_addons_enabled = true
+    only_critical_addons_enabled = var.aks.node_pool.system.only_critical_addons_enabled
 
     os_disk_size_gb = local.aks.default.os_disk_size_gb
     os_disk_type    = local.aks.default.os_disk_type
@@ -167,7 +169,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     dns_service_ip = "10.0.0.10"
     // Unnecessary it now practically, but for passing validation of terraform
     docker_bridge_cidr = "172.17.0.1/16"
-    ebpf_data_plane    = "cilium"
+    // ebpf_data_plane    = "cilium"
 
     load_balancer_sku = "standard"
     load_balancer_profile {
@@ -177,8 +179,11 @@ resource "azurerm_kubernetes_cluster" "default" {
 
   azure_policy_enabled = true
   oms_agent {
-    log_analytics_workspace_id = local.log_analytics.workspace_id
+    log_analytics_workspace_id      = local.log_analytics.workspace_id
+    msi_auth_for_monitoring_enabled = true
   }
+  // Just enabled. Waiting for this issue https://github.com/hashicorp/terraform-provider-azurerm/issues/20702
+  monitor_metrics {}
   open_service_mesh_enabled = false
   key_vault_secrets_provider {
     secret_rotation_enabled = true
@@ -216,20 +221,13 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   }
 }
 
-resource "azurerm_role_assignment" "aks_metrics" {
-  scope                = azurerm_kubernetes_cluster.default.id
-  role_definition_name = "Monitoring Metrics Publisher"
-  principal_id         = azurerm_kubernetes_cluster.default.oms_agent.0.oms_agent_identity.0.object_id
-}
-
 resource "azurerm_monitor_diagnostic_setting" "aks" {
   name                       = "aks-diag"
   target_resource_id         = azurerm_kubernetes_cluster.default.id
   log_analytics_workspace_id = local.log_analytics.workspace_id
 
-  log {
+  enabled_log {
     category = "kube-apiserver"
-    enabled  = true
 
     retention_policy {
       days    = 0
@@ -237,9 +235,8 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-controller-manager"
-    enabled  = true
 
     retention_policy {
       days    = 0
@@ -247,9 +244,8 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-scheduler"
-    enabled  = true
 
     retention_policy {
       days    = 0
@@ -257,19 +253,8 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     }
   }
 
-  log {
-    category = "kube-audit"
-    enabled  = false
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
-  }
-
-  log {
+  enabled_log {
     category = "kube-audit-admin"
-    enabled  = true
 
     retention_policy {
       days    = 0
@@ -277,9 +262,8 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     }
   }
 
-  log {
+  enabled_log {
     category = "guard"
-    enabled  = true
 
     retention_policy {
       days    = 0
@@ -287,49 +271,8 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
     }
   }
 
-  log {
+  enabled_log {
     category = "cluster-autoscaler"
-    enabled  = true
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
-  }
-
-  log {
-    category = "cloud-controller-manager"
-    enabled  = false
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
-  }
-
-  log {
-    category = "csi-azuredisk-controller"
-    enabled  = false
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
-  }
-
-  log {
-    category = "csi-azurefile-controller"
-    enabled  = false
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
-  }
-
-  log {
-    category = "csi-snapshot-controller"
-    enabled  = false
 
     retention_policy {
       days    = 0

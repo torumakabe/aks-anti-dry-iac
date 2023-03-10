@@ -46,7 +46,7 @@ type endpointTestConfig struct {
 
 var (
 	scope              = flag.String("scope", "all", "specify test scope [blue/green/all]")
-	tfVer              = flag.String("tf-version", "1.3.7", "specify Terraform version")
+	tfVer              = flag.String("tf-version", "1.4.0", "specify Terraform version")
 	fluxURL            = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
 	fluxBranch         = flag.String("flux-branch", "", "specify Flux branch")
 	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
@@ -107,7 +107,7 @@ func TestE2E(t *testing.T) {
 		t.Log("Destroying shared infrastructure...")
 		err = destroyShared(t, "../fixtures/shared", execPath, "./e2e.tfvars")
 		if err != nil {
-			t.Fatal(err)
+			t.Errorf("An error occuered while destroying shared resources. Manual removal might be required including dependent AKS resources: %s", err)
 		}
 	})
 
@@ -119,20 +119,21 @@ func TestE2E(t *testing.T) {
 
 	t.Cleanup(func() {
 		// destroy AKS cluster in parallel
-		t.Run("destroyAKS", func(t *testing.T) {
-			for cluster := range clusters {
-				cluster := cluster
-				tn := fmt.Sprintf("destroy%s", cluster)
-				wd := fmt.Sprintf("../fixtures/%s", cluster)
-				t.Run(tn, func(t *testing.T) {
-					t.Logf("Destroying AKS cluster (%s)...", cluster)
-					err = destroyAKS(t, wd, execPath, "./e2e.tfvars")
-					if err != nil {
-						t.Fatal(err)
-					}
-				})
-			}
-		})
+		var wg sync.WaitGroup
+		for cluster := range clusters {
+			cluster := cluster
+			wd := fmt.Sprintf("../fixtures/%s", cluster)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				t.Logf("Destroying AKS cluster (%s)...", cluster)
+				err = destroyAKS(t, wd, execPath, "./e2e.tfvars")
+				if err != nil {
+					t.Errorf("An error occuered while destroying AKS cluster (%s). Manual removal might be required including dependent shared resources: %s", cluster, err)
+				}
+			}()
+		}
+		wg.Wait()
 	})
 
 	// setup AKS cluster in parallel
@@ -330,7 +331,6 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 
 func destroyAKS(t *testing.T, workingDir, execPath, varFile string) error {
 	t.Helper()
-	t.Parallel()
 
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
@@ -375,7 +375,7 @@ func testEndpoint(t *testing.T, config *endpointTestConfig, clusters map[string]
 		if len(config.chaosTestManifests) > 0 {
 			err = injectChaos(t, config, clusters)
 			if err != nil {
-				return err
+				errChan <- err
 			}
 		}
 	}

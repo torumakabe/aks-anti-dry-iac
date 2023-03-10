@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-TF_VERSION := 1.3.7
+TF_VERSION := 1.4.0
 FLUX_REPO_URL := https://github.com/torumakabe/aks-anti-dry-iac.git
 # Make sure you pushed the branch under development if you modified /flux
 FLUX_BRANCH := main
@@ -27,6 +27,10 @@ test-all:
 
 define CLEAN
 	pushd ../fixtures/${1} \
+	&& terraform destroy -var-file=e2e.tfvars -auto-approve -no-color \
+	&& popd
+
+	pushd ../fixtures/${1} \
 	&& rm -f terraform.tfstate \
 	&& rm -f terraform.tfstate.backup \
 	&& popd
@@ -37,7 +41,7 @@ endef
 clean: clean-all
 
 .PHONY: clean-all
-clean-all: clean-shared clean-blue clean-green
+clean-all: clean-blue clean-green clean-shared
 
 .PHONY: clean-shared
 clean-shared:
