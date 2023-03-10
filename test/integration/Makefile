@@ -80,7 +80,7 @@ init-green:
 
 define VALIDATE
 	pushd ../fixtures/${1} \
-	&& terraform validate -no-color \
+	&& terraform validate -no-color -json  | jq -e '. | select(.warning_count == 0)' \
 	&& popd
 
 endef
@@ -151,7 +151,7 @@ endef
 clean: clean-all
 
 .PHONY: clean-all
-clean-all: clean-shared clean-blue clean-green
+clean-all: clean-blue clean-green clean-shared
 
 .PHONY: clean-shared
 clean-shared:

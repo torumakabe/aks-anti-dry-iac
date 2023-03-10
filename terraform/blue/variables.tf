@@ -14,7 +14,8 @@ variable "aks" {
     })
     node_pool = object({
       system = object({
-        node_count = number
+        node_count                   = number
+        only_critical_addons_enabled = bool
       })
       user = object({
         node_count = number
