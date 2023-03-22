@@ -1,10 +1,10 @@
 terraform {
-  required_version = "~> 1.4.0"
+  required_version = "~> 1.4.2"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.47.0"
+      version = "~> 3.48.0"
     }
   }
 }
@@ -303,15 +303,11 @@ resource "azurerm_user_assigned_identity" "demoapp" {
   name                = "mi-demoapp"
 }
 
-resource "azurerm_key_vault_access_policy" "demoapp_keyvault" {
-  key_vault_id = local.demoapp.key_vault.id
-  tenant_id    = local.tenant_id
-  object_id    = azurerm_user_assigned_identity.demoapp.principal_id
-
-  secret_permissions = [
-    "Get",
-    "List",
-  ]
+resource "azurerm_role_assignment" "demoapp_keyvault" {
+  scope = local.demoapp.key_vault.id
+  // role_definition_name = "Key Vault Secrets User"
+  role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6"
+  principal_id       = azurerm_user_assigned_identity.demoapp.principal_id
 }
 
 resource "azurerm_federated_identity_credential" "dempapp" {

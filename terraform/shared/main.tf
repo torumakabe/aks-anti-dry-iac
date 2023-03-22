@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.4.0"
+  required_version = "~> 1.4.2"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.47.0"
+      version = "~> 3.48.0"
     }
 
     random = {
@@ -328,11 +328,13 @@ resource "azurerm_private_dns_a_record" "demoapp_redis" {
 }
 
 resource "azurerm_key_vault" "demoapp" {
-  name                = local.demoapp.key_vault.name
-  location            = azurerm_resource_group.shared.location
-  resource_group_name = azurerm_resource_group.shared.name
-  tenant_id           = local.tenant_id
-  sku_name            = "standard"
+  name                      = local.demoapp.key_vault.name
+  location                  = azurerm_resource_group.shared.location
+  resource_group_name       = azurerm_resource_group.shared.name
+  tenant_id                 = local.tenant_id
+  sku_name                  = "standard"
+  enable_rbac_authorization = true
+  purge_protection_enabled  = false
 
   network_acls {
     bypass         = "None"
@@ -341,33 +343,21 @@ resource "azurerm_key_vault" "demoapp" {
   }
 }
 
-resource "azurerm_key_vault_access_policy" "demoapp_admin" {
-  key_vault_id = azurerm_key_vault.demoapp.id
-  tenant_id    = local.tenant_id
-  object_id    = local.current_client.object_id
+resource "azurerm_role_assignment" "kv_demoapp_admin_to_current_client" {
+  scope = azurerm_key_vault.demoapp.id
+  // role_definition_name = "Key Vault Administrator"
+  role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483"
+  principal_id       = local.current_client.object_id
 
-  secret_permissions = [
-    "Backup",
-    "Delete",
-    "Get",
-    "List",
-    "Purge",
-    "Recover",
-    "Restore",
-    "Set",
-  ]
-
-  # for CI
-  lifecycle {
-    ignore_changes = [
-      object_id,
-    ]
+  // Waiting for Azure AD preparation
+  provisioner "local-exec" {
+    command = "sleep 60"
   }
 }
 
 resource "azurerm_key_vault_secret" "demoapp_redis_server" {
   depends_on = [
-    azurerm_key_vault_access_policy.demoapp_admin
+    azurerm_role_assignment.kv_demoapp_admin_to_current_client
   ]
   name         = "redis-server"
   value        = "${azurerm_private_dns_a_record.demoapp_redis.fqdn}:6379"
@@ -377,7 +367,7 @@ resource "azurerm_key_vault_secret" "demoapp_redis_server" {
 
 resource "azurerm_key_vault_secret" "demoapp_redis_password" {
   depends_on = [
-    azurerm_key_vault_access_policy.demoapp_admin
+    azurerm_role_assignment.kv_demoapp_admin_to_current_client
   ]
   name         = "redis-password"
   value        = random_password.redis_password.result

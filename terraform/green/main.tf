@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.4.0"
+  required_version = "~> 1.4.2"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.47.0"
+      version = "~> 3.48.0"
     }
 
     kubernetes = {
