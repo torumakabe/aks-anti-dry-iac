@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.48.0"
+      version = "~> 3.49.0"
     }
   }
 }
@@ -167,8 +167,6 @@ resource "azurerm_kubernetes_cluster" "default" {
     network_plugin = "azure"
     service_cidr   = "10.0.0.0/16"
     dns_service_ip = "10.0.0.10"
-    // Unnecessary it now practically, but for passing validation of terraform
-    docker_bridge_cidr = "172.17.0.1/16"
     // ebpf_data_plane    = "cilium"
 
     load_balancer_sku = "standard"
