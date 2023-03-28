@@ -164,10 +164,10 @@ resource "azurerm_kubernetes_cluster" "default" {
   }
 
   network_profile {
-    network_plugin = "azure"
-    service_cidr   = "10.0.0.0/16"
-    dns_service_ip = "10.0.0.10"
-    // ebpf_data_plane    = "cilium"
+    network_plugin  = "azure"
+    service_cidr    = "10.0.0.0/16"
+    dns_service_ip  = "10.0.0.10"
+    ebpf_data_plane = "cilium"
 
     load_balancer_sku = "standard"
     load_balancer_profile {
