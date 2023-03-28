@@ -15,7 +15,7 @@ locals {
       vm_size              = "Standard_D2ds_v5"
       os_disk_size_gb      = 75
       os_disk_type         = "Ephemeral"
-      os_sku               = "Ubuntu"
+      os_sku               = "Mariner"
     }
     network = {
       node_system_subnet_id         = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node-system"
