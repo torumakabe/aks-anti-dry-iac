@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.50.0"
+      version = "~> 3.51.0"
     }
   }
 }
@@ -119,7 +119,7 @@ resource "azurerm_kubernetes_cluster" "default" {
   resource_group_name       = azurerm_resource_group.aks.name
   node_resource_group       = "${azurerm_resource_group.aks.name}-node"
   dns_prefix                = local.aks.cluster_name
-  sku_tier                  = "Paid"
+  sku_tier                  = "Standard"
   local_account_disabled    = true
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
