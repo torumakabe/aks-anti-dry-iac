@@ -3,8 +3,7 @@ terraform {
 
   required_providers {
     kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.19"
+      source = "hashicorp/kubernetes"
     }
   }
 }
@@ -40,11 +39,6 @@ EOT
   container_memory_working_set_threshold_percentage = 80.0
 [alertable_metrics_configuration_settings.pv_utilization_thresholds]
   pv_usage_threshold_percentage = 80.0
-EOT
-    prometheus-data-collection-settings      = <<EOT
-[prometheus_data_collection_settings.node]
-  interval = "1m"
-  urls = ["http://$NODE_IP:19100/metrics"]
 EOT
     metric_collection_settings               = <<EOT
 [metric_collection_settings.collect_kube_system_pv_metrics]
