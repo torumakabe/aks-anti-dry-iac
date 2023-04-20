@@ -3,8 +3,11 @@ terraform {
 
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.52.0"
+      source = "hashicorp/azurerm"
+    }
+
+    azapi = {
+      source = "Azure/azapi"
     }
   }
 }
@@ -293,6 +296,28 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
       log_analytics_workspace_id,
     ]
   }
+}
+
+// Replace this after resolution this issue https://github.com/hashicorp/terraform-provider-azurerm/issues/18809
+resource "azapi_resource" "amw_prometheus" {
+  schema_validation_enabled = false
+  type                      = "microsoft.monitor/accounts@2023-04-03"
+  name                      = "amw-prom-${local.aks.cluster_name}"
+  parent_id                 = azurerm_resource_group.aks.id
+  location                  = azurerm_resource_group.aks.location
+
+  response_export_values = ["*"]
+}
+
+resource "azurerm_monitor_data_collection_rule_association" "dce_amw_prometheus" {
+  target_resource_id          = azurerm_kubernetes_cluster.default.id
+  data_collection_endpoint_id = jsondecode(azapi_resource.amw_prometheus.output).properties.defaultIngestionSettings.dataCollectionEndpointResourceId
+}
+
+resource "azurerm_monitor_data_collection_rule_association" "dcra_amw_prometheus" {
+  name                    = "dcra-amw-prom-${local.aks.cluster_name}"
+  target_resource_id      = azurerm_kubernetes_cluster.default.id
+  data_collection_rule_id = jsondecode(azapi_resource.amw_prometheus.output).properties.defaultIngestionSettings.dataCollectionRuleResourceId
 }
 
 resource "azurerm_user_assigned_identity" "demoapp" {
