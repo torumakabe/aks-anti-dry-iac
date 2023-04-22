@@ -11,7 +11,7 @@ locals {
     }
     cluster_name = "${var.prefix}-aks-anti-dry-iac-${var.aks.switch}-${var.suffix}"
     default = {
-      orchestrator_version = "1.26.0"
+      orchestrator_version = "1.26.3"
       vm_size              = "Standard_D2ds_v5"
       os_disk_size_gb      = 75
       os_disk_type         = "Ephemeral"
@@ -20,7 +20,6 @@ locals {
     network = {
       node_system_subnet_id         = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node-system"
       node_user_az_subnet_id_prefix = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-node-user-az"
-      pod_subnet_id                 = "${local.subnet_id_base}/snet-aks-pod-shared"
       svc_lb_subnet_id              = "${local.subnet_id_base}/snet-aks-${var.aks.switch}-svc-lb"
     }
   }

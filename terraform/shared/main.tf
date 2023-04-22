@@ -22,10 +22,6 @@ module "subnet_addrs" {
   base_cidr_block = local.subnet_addrs.base_cidr_block
   networks = [
     {
-      name     = "aks_pod_shared"
-      new_bits = 2
-    },
-    {
       name     = "aks_blue_node_system"
       new_bits = 8
     },
@@ -100,22 +96,6 @@ resource "azurerm_virtual_network" "default" {
   resource_group_name = azurerm_resource_group.shared.name
   location            = azurerm_resource_group.shared.location
   address_space       = [module.subnet_addrs.base_cidr_block]
-}
-
-resource "azurerm_subnet" "aks_pod_shared" {
-  name                 = "snet-aks-pod-shared"
-  resource_group_name  = azurerm_resource_group.shared.name
-  virtual_network_name = azurerm_virtual_network.default.name
-  address_prefixes     = [module.subnet_addrs.network_cidr_blocks["aks_pod_shared"]]
-
-  delegation {
-    name = "aks-delegation"
-
-    service_delegation {
-      name    = "Microsoft.ContainerService/managedClusters"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-    }
-  }
 }
 
 resource "azurerm_subnet" "aks_blue_node_system" {

@@ -143,7 +143,6 @@ resource "azurerm_kubernetes_cluster" "default" {
     # orchestrator_version  = data.azurerm_kubernetes_service_versions.current.latest_version
     orchestrator_version         = local.aks.default.orchestrator_version
     vnet_subnet_id               = local.aks.network.node_system_subnet_id
-    pod_subnet_id                = local.aks.network.pod_subnet_id
     zones                        = [1, 2, 3]
     node_count                   = var.aks.node_pool.system.node_count
     vm_size                      = local.aks.default.vm_size
@@ -167,10 +166,12 @@ resource "azurerm_kubernetes_cluster" "default" {
   }
 
   network_profile {
-    network_plugin  = "azure"
-    service_cidr    = "10.0.0.0/16"
-    dns_service_ip  = "10.0.0.10"
-    ebpf_data_plane = "cilium"
+    network_plugin      = "azure"
+    network_plugin_mode = "Overlay"
+    service_cidr        = "10.0.0.0/16"
+    dns_service_ip      = "10.0.0.10"
+    pod_cidr            = "10.244.0.0/16"
+    ebpf_data_plane     = "cilium"
 
     load_balancer_sku = "standard"
     load_balancer_profile {
@@ -205,7 +206,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.default.id
   orchestrator_version  = local.aks.default.orchestrator_version
   vnet_subnet_id        = "${local.aks.network.node_user_az_subnet_id_prefix}${each.key}"
-  pod_subnet_id         = local.aks.network.pod_subnet_id
   vm_size               = local.aks.default.vm_size
   zones                 = [each.key]
   node_count            = var.aks.node_pool.user.node_count
