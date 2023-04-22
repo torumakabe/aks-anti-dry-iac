@@ -36,7 +36,7 @@ log_analytics = {
 
 demoapp = {
   ingress_svc = {
-    ip = "10.1.68.4"
+    ip = "10.1.4.4"
   }
   key_vault = {
     name_body = "kv-demoapp"
