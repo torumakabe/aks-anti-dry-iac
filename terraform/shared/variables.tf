@@ -12,7 +12,14 @@ variable "shared_rg" {
   })
 }
 
-variable "demoapp_svc_ips" {
-  type        = map(string)
-  description = "Specify the IPs of the demoapp services manually. This is used like a switch between Blue and Green."
+variable "demoapp" {
+  type = object({
+    domain = string
+    target = list(string)
+  })
+
+  validation {
+    condition     = can([for target in var.demoapp.target : regex("^(blue|green)$", target)])
+    error_message = "demoapp.target must be only 'blue', 'green' or empty"
+  }
 }

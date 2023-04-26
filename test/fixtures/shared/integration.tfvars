@@ -8,7 +8,10 @@ shared_rg = {
   location = "japaneast"
 }
 
-demoapp_svc_ips = {
-  blue  = "10.1.4.4",
-  green = "10.1.9.4",
+demoapp = {
+  domain = "internal.test"
+  target = [
+    "blue",
+    "green"
+  ]
 }
