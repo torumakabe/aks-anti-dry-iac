@@ -19,13 +19,13 @@ locals {
   }
   demoapp = {
     agw_settings = {
-      listener_name             = "demoapp-httplstn"
-      backend_address_pool_name = "demoapp-beap"
-      http_setting_name         = "demoapp-be-htst"
-      request_routing_rule_name = "demoapp-rqrt"
-      backend_ip_addresses = [
-        for key, ip in var.demoapp_svc_ips : ip
-      ]
+      listener_name               = "demoapp-httplstn"
+      backend_address_pool_name   = "demoapp-beap"
+      http_setting_name           = "demoapp-be-htst"
+      request_routing_rule_name   = "demoapp-rqrt"
+      url_path_map_name           = "demoapp-urlpmn"
+      redirect_configuration_name = "demoapp-rdcfg"
+      probe_name                  = "demoapp-probe"
     }
     key_vault = {
       name = "${var.prefix}-kv-demoapp-${var.suffix}"

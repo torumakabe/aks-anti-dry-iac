@@ -216,8 +216,13 @@ resource "azurerm_application_gateway" "shared" {
   }
 
   backend_address_pool {
-    name         = local.demoapp.agw_settings.backend_address_pool_name
-    ip_addresses = local.demoapp.agw_settings.backend_ip_addresses
+    name = local.demoapp.agw_settings.backend_address_pool_name
+    ip_addresses = [
+      for target in var.demoapp.target :
+      target == "blue" ?
+      cidrhost(azurerm_subnet.aks_blue_svc_lb.address_prefixes[0], 4) :
+      cidrhost(azurerm_subnet.aks_green_svc_lb.address_prefixes[0], 4)
+    ]
   }
 
   backend_http_settings {
@@ -226,7 +231,8 @@ resource "azurerm_application_gateway" "shared" {
     path                  = "/"
     port                  = 80
     protocol              = "Http"
-    request_timeout       = 10
+    request_timeout       = 15
+    probe_name            = local.demoapp.agw_settings.probe_name
     connection_draining {
       enabled           = true
       drain_timeout_sec = 10
@@ -241,12 +247,40 @@ resource "azurerm_application_gateway" "shared" {
   }
 
   request_routing_rule {
-    name                       = local.demoapp.agw_settings.request_routing_rule_name
-    rule_type                  = "Basic"
-    http_listener_name         = local.demoapp.agw_settings.listener_name
-    backend_address_pool_name  = local.demoapp.agw_settings.backend_address_pool_name
-    backend_http_settings_name = local.demoapp.agw_settings.http_setting_name
-    priority                   = 100
+    name               = local.demoapp.agw_settings.request_routing_rule_name
+    rule_type          = "PathBasedRouting"
+    http_listener_name = local.demoapp.agw_settings.listener_name
+    url_path_map_name  = local.demoapp.agw_settings.url_path_map_name
+    priority           = 100
+  }
+
+  url_path_map {
+    name                               = local.demoapp.agw_settings.url_path_map_name
+    default_backend_address_pool_name  = local.demoapp.agw_settings.backend_address_pool_name
+    default_backend_http_settings_name = local.demoapp.agw_settings.http_setting_name
+
+    // easy solution for protecting health check endpoint
+    path_rule {
+      name                        = "black-hole"
+      paths                       = ["/healthz"]
+      redirect_configuration_name = local.demoapp.agw_settings.redirect_configuration_name
+    }
+  }
+
+  redirect_configuration {
+    name          = local.demoapp.agw_settings.redirect_configuration_name
+    redirect_type = "Permanent"
+    target_url    = "http://blackhole.example"
+  }
+
+  probe {
+    name                = local.demoapp.agw_settings.probe_name
+    host                = "127.0.0.1"
+    protocol            = "Http"
+    path                = "/healthz"
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
   }
 }
 
@@ -286,22 +320,21 @@ resource "azurerm_container_group" "demoapp_redis" {
   }
 }
 
-
-resource "azurerm_private_dns_zone" "demoapp_shared" {
-  name                = "demoapp.io"
+resource "azurerm_private_dns_zone" "demoapp_internal_shared" {
+  name                = "shared.${var.demoapp.domain}"
   resource_group_name = azurerm_resource_group.shared.name
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "demoapp_shared" {
-  name                  = "pdnsz-link-demoapp-shared"
+resource "azurerm_private_dns_zone_virtual_network_link" "demoapp_internal_shared" {
+  name                  = "pdnsz-link-demoapp-internal-shared"
   resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.demoapp_shared.name
+  private_dns_zone_name = azurerm_private_dns_zone.demoapp_internal_shared.name
   virtual_network_id    = azurerm_virtual_network.default.id
 }
 
 resource "azurerm_private_dns_a_record" "demoapp_redis" {
   name                = "redis"
-  zone_name           = azurerm_private_dns_zone.demoapp_shared.name
+  zone_name           = azurerm_private_dns_zone.demoapp_internal_shared.name
   resource_group_name = azurerm_resource_group.shared.name
   ttl                 = 300
   records             = [azurerm_container_group.demoapp_redis.ip_address]

@@ -185,12 +185,15 @@ session-checker-76799c4797-wjszz   1/1     Running   0          108s
 
 Requests are distributed across both clusters and multiple pods, but the session is shared by Redis, so it counts correctly.
 
-Then, comment out the Service IP of Blue and apply it.
+Then, comment out blue from target and apply it.
 
 ```HCL
-demoapp_svc_ips = {
-  # blue  = "10.1.4.4",
-  green = "10.1.9.4",
+demoapp = {
+  domain = "internal.example"
+  target = [
+    # "blue",
+    "green"
+  ]
 }
 ```
 
