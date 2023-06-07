@@ -46,7 +46,7 @@ type endpointTestConfig struct {
 
 var (
 	scope              = flag.String("scope", "all", "specify test scope [blue/green/all]")
-	tfVer              = flag.String("tf-version", "1.4.5", "specify Terraform version")
+	tfVer              = flag.String("tf-version", "1.4.6", "specify Terraform version")
 	fluxURL            = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
 	fluxBranch         = flag.String("flux-branch", "", "specify Flux branch")
 	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
@@ -173,7 +173,7 @@ func TestE2E(t *testing.T) {
 	config := &endpointTestConfig{
 		IP:                 endpointIP,
 		cardinarity:        cardinarity,
-		prepTimeout:        20 * time.Minute,
+		prepTimeout:        30 * time.Minute,
 		testDuration:       2 * time.Minute,
 		chaosTestManifests: absManifestPaths,
 	}
@@ -424,6 +424,13 @@ loop:
 			}
 			defer resp.Body.Close()
 
+			if resp.StatusCode != http.StatusOK {
+				resp.Body.Close()
+				t.Logf("Waiting for all Pods (%d/%d) to respond: %d attempt(s)", len(hostSet), config.cardinarity, i+1)
+				time.Sleep(time.Second * 10)
+				continue
+			}
+
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return fmt.Errorf("read body: %w", err)
@@ -440,6 +447,7 @@ loop:
 				break loop
 			}
 
+			resp.Body.Close()
 			t.Logf("Waiting for all Pods (%d/%d) to respond: %d attempt(s)", len(hostSet), config.cardinarity, i+1)
 			time.Sleep(time.Second * 10)
 		}

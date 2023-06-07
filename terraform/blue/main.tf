@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.4.5"
+  required_version = "~> 1.4.6"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.53.0"
+      version = "~> 3.59.0"
     }
 
     azapi = {
@@ -16,7 +16,7 @@ terraform {
 
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.20"
+      version = "~> 2.21"
     }
   }
 }
@@ -64,6 +64,7 @@ module "aks" {
   aks           = var.aks
   log_analytics = var.log_analytics
   demoapp       = var.demoapp
+  prometheus    = var.prometheus
 }
 
 module "kubernetes-config" {

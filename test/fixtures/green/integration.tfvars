@@ -42,3 +42,9 @@ demoapp = {
     name_body = "kv-demoapp"
   }
 }
+
+prometheus = {
+  enabled                       = true
+  data_collection_endpoint_name = "dce-amw-prom"
+  data_collection_rule_name     = "dcr-amw-prom"
+}
