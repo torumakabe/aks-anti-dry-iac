@@ -44,3 +44,11 @@ variable "demoapp" {
     })
   })
 }
+
+variable "prometheus" {
+  type = object({
+    enabled                       = bool
+    data_collection_endpoint_name = string
+    data_collection_rule_name     = string
+  })
+}

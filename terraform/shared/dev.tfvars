@@ -15,3 +15,10 @@ demoapp = {
     "green"
   ]
 }
+
+prometheus_grafana = {
+  enabled                       = false
+  workspace_name                = "amw-prom"
+  data_collection_endpoint_name = "dce-amw-prom"
+  data_collection_rule_name     = "dcr-amw-prom"
+}

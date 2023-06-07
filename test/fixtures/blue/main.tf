@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.4.5"
+  required_version = "~> 1.4.6"
 }
 
 module "blue" {
@@ -9,4 +9,5 @@ module "blue" {
   aks           = var.aks
   log_analytics = var.log_analytics
   demoapp       = var.demoapp
+  prometheus    = var.prometheus
 }

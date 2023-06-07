@@ -1,11 +1,12 @@
 terraform {
-  required_version = "~> 1.4.5"
+  required_version = "~> 1.4.6"
 }
 
 module "shared" {
-  source    = "../../../terraform/shared"
-  prefix    = var.prefix
-  suffix    = var.suffix
-  shared_rg = var.shared_rg
-  demoapp   = var.demoapp
+  source             = "../../../terraform/shared"
+  prefix             = var.prefix
+  suffix             = var.suffix
+  shared_rg          = var.shared_rg
+  demoapp            = var.demoapp
+  prometheus_grafana = var.prometheus_grafana
 }

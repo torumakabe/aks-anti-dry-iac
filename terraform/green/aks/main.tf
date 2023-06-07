@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.4.5"
+  required_version = "~> 1.4.6"
 
   required_providers {
     azurerm = {
@@ -184,8 +184,12 @@ resource "azurerm_kubernetes_cluster" "default" {
     log_analytics_workspace_id      = local.log_analytics.workspace_id
     msi_auth_for_monitoring_enabled = true
   }
-  // Just enabled. Waiting for this issue https://github.com/hashicorp/terraform-provider-azurerm/issues/20702
-  monitor_metrics {}
+
+  dynamic "monitor_metrics" {
+    for_each = var.prometheus.enabled ? toset(["1"]) : toset([])
+    content {}
+  }
+
   open_service_mesh_enabled = false
   key_vault_secrets_provider {
     secret_rotation_enabled = true
@@ -298,26 +302,19 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   }
 }
 
-// Replace this after resolution this issue https://github.com/hashicorp/terraform-provider-azurerm/issues/18809
-resource "azapi_resource" "amw_prometheus" {
-  schema_validation_enabled = false
-  type                      = "microsoft.monitor/accounts@2023-04-03"
-  name                      = "amw-prom-${local.aks.cluster_name}"
-  parent_id                 = azurerm_resource_group.aks.id
-  location                  = azurerm_resource_group.aks.location
-
-  response_export_values = ["*"]
-}
-
 resource "azurerm_monitor_data_collection_rule_association" "dce_amw_prometheus" {
+  for_each = var.prometheus.enabled ? toset(["1"]) : toset([])
+
   target_resource_id          = azurerm_kubernetes_cluster.default.id
-  data_collection_endpoint_id = jsondecode(azapi_resource.amw_prometheus.output).properties.defaultIngestionSettings.dataCollectionEndpointResourceId
+  data_collection_endpoint_id = local.prometheus.data_collection_endpoint_id
 }
 
 resource "azurerm_monitor_data_collection_rule_association" "dcra_amw_prometheus" {
+  for_each = var.prometheus.enabled ? toset(["1"]) : toset([])
+
   name                    = "dcra-amw-prom-${local.aks.cluster_name}"
   target_resource_id      = azurerm_kubernetes_cluster.default.id
-  data_collection_rule_id = jsondecode(azapi_resource.amw_prometheus.output).properties.defaultIngestionSettings.dataCollectionRuleResourceId
+  data_collection_rule_id = local.prometheus.data_collection_rule_id
 }
 
 resource "azurerm_user_assigned_identity" "demoapp" {
