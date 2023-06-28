@@ -29,14 +29,13 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 Prerequisites & tested
 
-- [Terraform](https://www.terraform.io/docs/index.html): 1.4.6
-  - hashicorp/azurerm: 3.59.0
-  - hashicorp/kubernetes: 2.21
+- [Terraform](https://www.terraform.io/docs/index.html): 1.5.1
+  - hashicorp/azurerm: 3.62.0
   - State store: Local
 - [TFLint](https://github.com/terraform-linters/tflint): 0.46.1
-  - [azurerm plugin](https://github.com/terraform-linters/tflint-ruleset-azurerm): 0.23.0
-- [Flux(v2)](https://fluxcd.io/docs/): 2.0.0-rc.5
-- [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.0.29
+  - [azurerm plugin](https://github.com/terraform-linters/tflint-ruleset-azurerm): 0.24.0
+- [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.0.30
+- Ubuntu: 22.04.2 LTS
 
 ### Privileges required for execution
 
@@ -47,7 +46,7 @@ Prerequisites & tested
     - For admin operation & Flux execution
     - Assign role to Azure AD group and [specify](./terraform/blue/prod.tfvars) it as terrafofm var
   - GitHub Repo control (GitHub PAT)
-    - For execution of Flux
+    - For execution of Flux with GitHub
 - GitHub Actions CI (Azure Service Principal)
   - Azure Subscription Reader (Azure role)
   - [Using OIDC auth for Terraform](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_oidc)
@@ -82,19 +81,15 @@ The policy of this sample for variables such as IDs and secrets is as follows.
 
 You have to prepare the following variables for each envs(e.g dev, prod).
 
-- Azure Resources (Shared): [Terraform tfvars](./terraform/shared/dev.tfvars)
-- Azure Resources (Blue/Green): [Terraform tfvars](./terraform/blue/dev.tfvars)
+- Shared: [Terraform tfvars](./terraform/shared/dev.tfvars)
+- Blue/Green: [Terraform tfvars](./terraform/blue/dev.tfvars)
 
 You can also [use environment variables](https://www.terraform.io/docs/language/values/variables.html) instead of tfvars file.
 
 ### Bootstrap order
 
-1. Azure Resources (Shared): [Terraform dir](./terraform/shared)
-2. Azure Resources (Blue/Green): [Terraform dir](./terraform/blue)
-3. Kubernetes Resources (Blue/Green): [Flux helper script](./flux/scripts)
-
-- [For Production](./flux/scripts/bootstrap.sh)
-- [For Dev (without storing its manifests in a Git repository)](./flux/scripts/setup-dev.sh)
+1. Shared: [Terraform dir](./terraform/shared)
+2. Blue/Green: [Terraform dir](./terraform/blue)
 
 You can operate Blue/Green in any order, but always be aware of the context of clusters.
 

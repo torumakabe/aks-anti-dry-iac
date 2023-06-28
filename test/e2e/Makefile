@@ -1,28 +1,28 @@
 SHELL=/bin/bash
 
-TF_VERSION := 1.4.6
-FLUX_REPO_URL := https://github.com/torumakabe/aks-anti-dry-iac.git
-# Make sure you pushed the branch under development if you modified /flux
-FLUX_BRANCH := main
+TF_VERSION := 1.5.1
 
 # Before running this test, you must:
 # export GITHUB_TOKEN=your-token
 # export GITHUB_USER=your-username
+
+export TF_VAR_flux_git_user  := ${GITHUB_USER}
+export TF_VAR_flux_git_token := ${GITHUB_TOKEN}
 
 .PHONY: test
 test: test-all
 
 .PHONY: test-blue
 test-blue:
-	go test -v -run TestE2E -timeout 120m0s -scope blue -tf-version ${TF_VERSION} -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 120m0s -scope blue -tf-version ${TF_VERSION}
 
 .PHONY: test-green
 test-green:
-	go test -v -run TestE2E -timeout 120m0s -scope green -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 120m0s -scope green -tf-version ${TF_VERSION}
 
 .PHONY: test-all
 test-all:
-	go test -v -run TestE2E -timeout 120m0s -scope all -tf-version ${TF_VERSION}  -flux-repo-url ${FLUX_REPO_URL} -flux-branch ${FLUX_BRANCH}
+	go test -v -run TestE2E -timeout 120m0s -scope all -tf-version ${TF_VERSION}
 
 
 define CLEAN

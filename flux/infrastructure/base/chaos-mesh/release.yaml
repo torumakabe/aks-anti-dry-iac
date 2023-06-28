@@ -29,3 +29,7 @@ spec:
     chaosDaemon:
       runtime: containerd
       socketPath: /run/containerd/containerd.sock
+    dnsServer:
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
