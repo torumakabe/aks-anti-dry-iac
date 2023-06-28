@@ -1,6 +1,8 @@
 SHELL=/bin/bash
 
 export TFLINT_LOG := "info"
+export TF_VAR_flux_git_user  := "dummy"
+export TF_VAR_flux_git_token := "dummy"
 
 .PHONY: test
 test: test-all

@@ -33,6 +33,20 @@ log_analytics = {
   }
 }
 
+prometheus = {
+  enabled                       = false
+  data_collection_endpoint_name = "dce-amw-prom"
+  data_collection_rule_name     = "dcr-amw-prom"
+}
+
+flux = {
+  git_repository = {
+    url             = "https://github.com/your-account/your-repo.git"
+    reference_type  = "branch"
+    reference_value = "main"
+  }
+}
+
 demoapp = {
   ingress_svc = {
     ip = "10.1.4.4"
@@ -40,10 +54,4 @@ demoapp = {
   key_vault = {
     name_body = "kv-demoapp"
   }
-}
-
-prometheus = {
-  enabled                       = true
-  data_collection_endpoint_name = "dce-amw-prom"
-  data_collection_rule_name     = "dcr-amw-prom"
 }

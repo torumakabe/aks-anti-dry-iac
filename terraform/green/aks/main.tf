@@ -1,13 +1,9 @@
 terraform {
-  required_version = "~> 1.4.6"
+  required_version = "~> 1.5.1"
 
   required_providers {
     azurerm = {
       source = "hashicorp/azurerm"
-    }
-
-    azapi = {
-      source = "Azure/azapi"
     }
   }
 }
@@ -94,6 +90,15 @@ resource "azurerm_subnet_nat_gateway_association" "aks_user_az" {
   for_each       = toset(["1", "2", "3"])
   subnet_id      = "${local.aks.network.node_user_az_subnet_id_prefix}${each.key}"
   nat_gateway_id = azurerm_nat_gateway.aks_user_az[each.key].id
+
+  // Waiting to avoid subnet conflict
+  provisioner "local-exec" {
+    command = "sleep 10"
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sleep 10"
+  }
 }
 
 resource "azurerm_role_assignment" "aks_subnet_svc_lb" {
@@ -167,10 +172,9 @@ resource "azurerm_kubernetes_cluster" "default" {
 
   network_profile {
     network_plugin      = "azure"
-    network_plugin_mode = "Overlay"
+    network_plugin_mode = "overlay"
     service_cidr        = "10.0.0.0/16"
     dns_service_ip      = "10.0.0.10"
-    pod_cidr            = "10.244.0.0/16"
     ebpf_data_plane     = "cilium"
 
     load_balancer_sku = "standard"
@@ -190,7 +194,6 @@ resource "azurerm_kubernetes_cluster" "default" {
     content {}
   }
 
-  open_service_mesh_enabled = false
   key_vault_secrets_provider {
     secret_rotation_enabled = true
   }
@@ -302,6 +305,45 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   }
 }
 
+resource "azurerm_monitor_data_collection_rule" "dcr_azmon_container_insights" {
+  name                = "dcr-azmon-container-insights-${local.aks.cluster_name}"
+  resource_group_name = azurerm_resource_group.aks.name
+  location            = azurerm_resource_group.aks.location
+
+  destinations {
+    log_analytics {
+      workspace_resource_id = local.log_analytics.workspace_id
+      name                  = "ciworkspace"
+    }
+  }
+
+  data_flow {
+    streams      = ["Microsoft-ContainerInsights-Group-Default", "Microsoft-Syslog"]
+    destinations = ["ciworkspace"]
+  }
+
+  data_sources {
+    syslog {
+      streams        = ["Microsoft-Syslog"]
+      facility_names = ["auth", "authpriv", "cron", "daemon", "mark", "kern", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7", "lpr", "mail", "news", "syslog", "user", "uucp"]
+      log_levels     = ["Debug", "Info", "Notice", "Warning", "Error", "Critical", "Alert", "Emergency"]
+      name           = "sysLogsDataSource"
+    }
+
+    extension {
+      streams        = ["Microsoft-ContainerInsights-Group-Default"]
+      extension_name = "ContainerInsights"
+      name           = "ContainerInsightsExtension"
+    }
+  }
+}
+
+resource "azurerm_monitor_data_collection_rule_association" "dcra_azmon_container_insights" {
+  name                    = "dcra-azmon-container-insights-${local.aks.cluster_name}"
+  target_resource_id      = azurerm_kubernetes_cluster.default.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr_azmon_container_insights.id
+}
+
 resource "azurerm_monitor_data_collection_rule_association" "dce_amw_prometheus" {
   for_each = var.prometheus.enabled ? toset(["1"]) : toset([])
 
@@ -317,29 +359,3 @@ resource "azurerm_monitor_data_collection_rule_association" "dcra_amw_prometheus
   data_collection_rule_id = local.prometheus.data_collection_rule_id
 }
 
-resource "azurerm_user_assigned_identity" "demoapp" {
-  resource_group_name = azurerm_resource_group.aks.name
-  location            = azurerm_resource_group.aks.location
-  name                = "mi-demoapp"
-}
-
-resource "azurerm_role_assignment" "demoapp_keyvault" {
-  scope = local.demoapp.key_vault.id
-  // role_definition_name = "Key Vault Secrets User"
-  role_definition_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Authorization/roleDefinitions/4633458b-17de-408a-b874-0445c86b69e6"
-  principal_id       = azurerm_user_assigned_identity.demoapp.principal_id
-}
-
-resource "azurerm_federated_identity_credential" "dempapp" {
-  depends_on = [
-    azurerm_kubernetes_cluster_node_pool.user["1"],
-    azurerm_kubernetes_cluster_node_pool.user["2"],
-    azurerm_kubernetes_cluster_node_pool.user["3"],
-  ]
-  name                = "ficred-demoapp"
-  resource_group_name = azurerm_resource_group.aks.name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = azurerm_kubernetes_cluster.default.oidc_issuer_url
-  parent_id           = azurerm_user_assigned_identity.demoapp.id
-  subject             = "system:serviceaccount:${local.demoapp.service_account.namespace}:${local.demoapp.service_account.name}"
-}

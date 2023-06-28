@@ -46,9 +46,7 @@ type endpointTestConfig struct {
 
 var (
 	scope              = flag.String("scope", "all", "specify test scope [blue/green/all]")
-	tfVer              = flag.String("tf-version", "1.4.6", "specify Terraform version")
-	fluxURL            = flag.String("flux-repo-url", "", "specify Flux Repo URL [https://your-repo.git]")
-	fluxBranch         = flag.String("flux-branch", "", "specify Flux branch")
+	tfVer              = flag.String("tf-version", "1.5.1", "specify Terraform version")
 	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
 )
 
@@ -191,14 +189,14 @@ func TestE2E(t *testing.T) {
 func checkEnv(t *testing.T) error {
 	t.Helper()
 
-	gh_token := os.Getenv("GITHUB_TOKEN")
+	gh_token := os.Getenv("TF_VAR_flux_git_token")
 	if gh_token == "" {
-		return fmt.Errorf("You must export GITHUB_TOKEN")
+		return fmt.Errorf("You must export GITHUB_TOKEN or TF_VAR_flux_git_token")
 	}
 
-	gh_user := os.Getenv("GITHUB_USER")
+	gh_user := os.Getenv("TF_VAR_flux_git_user")
 	if gh_user == "" {
-		return fmt.Errorf("You must export GITHUB_USER")
+		return fmt.Errorf("You must export GITHUB_USER or TF_VAR_flux_git_user")
 	}
 
 	// check login status
@@ -312,19 +310,6 @@ func setupAKS(t *testing.T, workingDir, execPath, varFile string) (string, strin
 
 	rgName := state.Values.Outputs["resource_group_name"].Value.(string)
 	clusterName := state.Values.Outputs["aks_cluster_name"].Value.(string)
-
-	scriptPath := "../../flux/scripts/setup-dev-test.sh"
-	cmd := exec.Command(scriptPath, clusterSwitch, rgName, clusterName, *fluxURL, *fluxBranch)
-	cmd.Env = os.Environ()
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-	err = cmd.Run()
-	if err != nil {
-		t.Log(outb.String())
-		t.Log(errb.String())
-		return "", "", fmt.Errorf("exec flux setup: %w", err)
-	}
 
 	return rgName, clusterName, nil
 }

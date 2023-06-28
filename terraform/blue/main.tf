@@ -1,22 +1,12 @@
 terraform {
-  required_version = "~> 1.4.6"
+  required_version = "~> 1.5.1"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.59.0"
-    }
-
-    azapi = {
-      source  = "Azure/azapi"
-      version = "~> 1.5"
-    }
-
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.21"
+      version = "~> 3.62.0"
     }
   }
 }
@@ -31,54 +21,29 @@ provider "azurerm" {
   }
 }
 
-data "azurerm_kubernetes_cluster" "default" {
-  depends_on          = [module.aks] # refresh cluster state before reading
-  name                = module.aks.aks_cluster_name
-  resource_group_name = module.aks.resource_group_name
-}
-
-provider "kubernetes" {
-  host                   = data.azurerm_kubernetes_cluster.default.kube_config.0.host
-  cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.default.kube_config.0.cluster_ca_certificate)
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "kubelogin"
-    args = [
-      "get-token",
-      "--login",
-      "azurecli",
-      "--server-id",
-      "6dae42f8-4368-4678-94ff-3960e28e3630"
-    ]
-  }
-}
-
-# Split HCL into two modules (AKS and k8s) due to the following limitation of Terraform
-# https://github.com/hashicorp/terraform-provider-kubernetes/issues/1307
-
 module "aks" {
   source        = "./aks"
   prefix        = var.prefix
   suffix        = var.suffix
   aks           = var.aks
   log_analytics = var.log_analytics
-  demoapp       = var.demoapp
   prometheus    = var.prometheus
 }
 
-module "kubernetes-config" {
-  # workaround for https://github.com/hashicorp/terraform-provider-kubernetes/issues/1867
+module "apps" {
   depends_on = [module.aks]
-  source     = "./kubernetes-config"
+  source     = "./apps"
+  suffix     = var.suffix
   aks = {
     switch = var.aks.switch
     rg = {
-      name = local.aks.rg.name
+      name     = module.aks.resource_group_name
+      location = module.aks.resource_group_location
     }
-    cluster_name = local.aks.cluster_name
+    cluster_name    = module.aks.aks_cluster_name
+    cluster_id      = module.aks.aks_cluster_id
+    oidc_issuer_url = module.aks.aks_oidc_issuer_url
   }
-  mi_demoapp = module.aks.mi_demoapp
   demoapp = {
     ingress_svc = {
       subnet = module.aks.svc_lb_subnet_name
@@ -86,6 +51,16 @@ module "kubernetes-config" {
     }
     key_vault = {
       name = local.demoapp.key_vault.name
+      id   = local.demoapp.key_vault.id
     }
   }
+  flux = {
+    git_repository = {
+      url             = var.flux.git_repository.url
+      reference_type  = var.flux.git_repository.reference_type
+      reference_value = var.flux.git_repository.reference_value
+    }
+  }
+  flux_git_user  = var.flux_git_user
+  flux_git_token = var.flux_git_token
 }

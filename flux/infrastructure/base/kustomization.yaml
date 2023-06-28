@@ -4,3 +4,4 @@ resources:
   - sources
   - nginx
   - chaos-mesh
+  - azure-monitor
