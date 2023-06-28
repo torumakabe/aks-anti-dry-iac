@@ -142,9 +142,7 @@ Note that this CI does not include the E2E test. Please consider if necessary.
 
 ### Switch Blue/Green
 
-You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing Terraform variable ["demoapp_svc_ips"](./terraform/shared/dev.tfvars) and applying it while continuing the service.
-
-This IP address is the Service IP of NGINX Ingress and can be changed [in this code](./terraform/blue/dev.tfvars).
+You can join/remove services of each cluster to/from backend addresses of Application Gateway by changing `demoapp.target` in [Terraform variable](./terraform/shared/prod.tfvars) and applying it while continuing the service.
 
 There are [sample app](https://github.com/torumakabe/session-checker) and [test script](./test/tools/scripts/session-check.sh) to help you switch between blue and green and see sessions across the cluster.
 
