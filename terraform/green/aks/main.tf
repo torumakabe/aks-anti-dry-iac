@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.5.1"
+  required_version = "~> 1.5.2"
 
   required_providers {
     azurerm = {
@@ -131,6 +131,21 @@ resource "azurerm_kubernetes_cluster" "default" {
   local_account_disabled    = true
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
+  maintenance_window {
+    allowed {
+      day   = "Wednesday"
+      hours = [1]
+    }
+  }
+  node_os_channel_upgrade = "NodeImage"
+  maintenance_window_node_os {
+    frequency   = "Weekly"
+    interval    = 1
+    duration    = 4
+    day_of_week = "Thursday"
+    start_time  = "01:00"
+    utc_offset  = "+09:00"
+  }
   // add as needed
   api_server_access_profile {
     authorized_ip_ranges = [

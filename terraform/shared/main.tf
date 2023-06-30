@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.5.1"
+  required_version = "~> 1.5.2"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.62.0"
+      version = "~> 3.63.0"
     }
 
     azapi = {
@@ -651,7 +651,7 @@ resource "azapi_resource" "rrg_kube_amw_prometheus" {
 resource "azurerm_dashboard_grafana" "shared" {
   for_each = var.prometheus_grafana.enabled ? toset(["1"]) : toset([])
 
-  name                              = "grafana-shared"
+  name                              = "${var.prefix}-grafana-shared"
   resource_group_name               = azurerm_resource_group.shared.name
   location                          = azurerm_resource_group.shared.location
   api_key_enabled                   = true
