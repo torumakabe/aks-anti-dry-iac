@@ -1,6 +1,6 @@
 module github.com/torumakabe/aks-anti-dry-iac/test/e2e
 
-go 1.20
+go 1.21
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.4
@@ -15,9 +15,9 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/terraform-json v0.17.1 // indirect
-	github.com/zclconf/go-cty v1.13.2 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
+	github.com/zclconf/go-cty v1.13.3 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 )
