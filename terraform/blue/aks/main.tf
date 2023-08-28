@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.5.4"
+  required_version = "~> 1.5.6"
 
   required_providers {
     azurerm = {
@@ -17,7 +17,7 @@ resource "azurerm_resource_group" "aks" {
 /*
 data "azurerm_kubernetes_service_versions" "current" {
   location        = azurerm_resource_group.aks.location
-  version_prefix  = "1.26"
+  version_prefix  = "1.27"
   include_preview = false
 }
 */
