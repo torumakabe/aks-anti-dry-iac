@@ -46,7 +46,7 @@ type endpointTestConfig struct {
 
 var (
 	scope              = flag.String("scope", "all", "specify test scope [blue/green/all]")
-	tfVer              = flag.String("tf-version", "1.5.6", "specify Terraform version")
+	tfVer              = flag.String("tf-version", "1.5.7", "specify Terraform version")
 	chaosTestManifests = flag.String("chaostest-manifest", "../chaos/manifests/*.yaml", "specify chaos test manifest file path")
 )
 

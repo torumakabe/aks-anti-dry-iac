@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.5.6"
+  required_version = "~> 1.5.7"
 
   required_providers {
     azurerm = {
@@ -251,66 +251,31 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
 
   enabled_log {
     category = "kube-apiserver"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   enabled_log {
     category = "kube-controller-manager"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   enabled_log {
     category = "kube-scheduler"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   enabled_log {
     category = "kube-audit-admin"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   enabled_log {
     category = "guard"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   enabled_log {
     category = "cluster-autoscaler"
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   metric {
     category = "AllMetrics"
     enabled  = false
-
-    retention_policy {
-      days    = 0
-      enabled = false
-    }
   }
 
   lifecycle {
