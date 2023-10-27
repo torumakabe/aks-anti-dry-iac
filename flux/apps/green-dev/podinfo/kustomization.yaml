@@ -2,5 +2,36 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base/podinfo
-patchesStrategicMerge:
-  - release-values.yaml
+patches:
+  - patch: |-
+      apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      kind: HelmRelease
+      metadata:
+        name: podinfo-frontend
+      spec:
+        values:
+          tolerations:
+          - key: kubernetes.azure.com/scalesetpriority
+            operator: Equal
+            value: spot
+            effect: NoSchedule
+    target:
+      kind: HelmRelease
+      name: podinfo-frontend
+      namespace: podinfo
+  - patch: |-
+      apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      kind: HelmRelease
+      metadata:
+        name: podinfo-backend
+      spec:
+        values:
+          tolerations:
+          - key: kubernetes.azure.com/scalesetpriority
+            operator: Equal
+            value: spot
+            effect: NoSchedule
+    target:
+      kind: HelmRelease
+      name: podinfo-backend
+      namespace: podinfo
