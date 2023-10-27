@@ -11,7 +11,7 @@ spec:
         kind: HelmRepository
         name: ingress-nginx
         namespace: flux-system
-      version: "4.7.2"
+      version: "4.8.3"
   interval: 5m
   install:
     remediation:
@@ -43,6 +43,7 @@ spec:
           tolerations:
           - key: CriticalAddonsOnly
             operator: Exists
+      allowSnippetAnnotations: true
     defaultBackend:
       enabled: "true"
       tolerations:

@@ -3,5 +3,21 @@ kind: Kustomization
 resources:
   - ../../base/demoapp
   - ../../base/demoapp/image-update
-patchesStrategicMerge:
-  - deployment-values.yaml
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: session-checker
+      spec:
+        template:
+          spec:
+            tolerations:
+            - key: kubernetes.azure.com/scalesetpriority
+              operator: Equal
+              value: spot
+              effect: NoSchedule
+    target:
+      kind: Deployment
+      name: session-checker
+      namespace: demoapp
