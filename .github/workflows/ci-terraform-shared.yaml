@@ -67,7 +67,7 @@ jobs:
         continue-on-error: true
 
       - name: "Create comment for PR (Terraform fmt/init/validate/plan)"
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           PLAN: "${{ steps.plan.outputs.stdout }}\n${{ steps.plan.outputs.stderr }}"
         with:

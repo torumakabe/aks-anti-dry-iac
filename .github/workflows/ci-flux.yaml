@@ -34,7 +34,7 @@ jobs:
           echo 'EOF' >> $GITHUB_ENV
 
       - name: "Create comment for PR (diff flux files between Blue & Green)"
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           DIFF: "${{ env.DIFF_LOG }}"
         with:
