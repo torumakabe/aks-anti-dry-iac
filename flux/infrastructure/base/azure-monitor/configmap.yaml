@@ -22,3 +22,5 @@ data:
         enabled = false
       [log_collection_settings.schema]
         containerlog_schema_version = "v2"
+      [log_collection_settings.enable_multiline_logs]
+        enabled = "true"
