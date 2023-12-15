@@ -67,7 +67,7 @@ jobs:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.5
+          terraform_version: 1.6.6
           terraform_wrapper: false
 
       - name: "Terraform Format"
