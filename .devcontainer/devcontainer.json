@@ -7,7 +7,9 @@
 	"features": {
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-		"ghcr.io/devcontainers/features/terraform:1": {},
+		"ghcr.io/devcontainers/features/terraform:1": {
+			"version": "1.7.0"
+		},
 		"ghcr.io/flexwie/devcontainer-features/op:1": {}
 	},
 	"customizations": {
