@@ -1,16 +1,17 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/go
 {
-	"name": "Go",
+	"name": "Ubuntu",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1-1.21-bullseye",
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
 	"features": {
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
 		"ghcr.io/devcontainers/features/terraform:1": {
 			"version": "1.7"
 		},
-		"ghcr.io/flexwie/devcontainer-features/op:1": {}
+		"ghcr.io/flexwie/devcontainer-features/op:1": {},
+		"ghcr.io/devcontainers/features/go:1": {}
 	},
 	"customizations": {
 		"vscode": {
