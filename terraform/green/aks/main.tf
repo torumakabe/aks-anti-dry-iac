@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.7.5"
+  required_version = "~> 1.8.3"
 
   required_providers {
     azurerm = {
@@ -180,6 +180,7 @@ resource "azurerm_kubernetes_cluster" "default" {
 
   role_based_access_control_enabled = true
   azure_active_directory_role_based_access_control {
+    # will be depricated from AzureRM v4
     managed                = true
     admin_group_object_ids = var.aks.aad.admin_group_object_ids
     azure_rbac_enabled     = true
