@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.8.3"
+  required_version = "~> 1.8.4"
 
   required_providers {
     azurerm = {
@@ -215,6 +215,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     secret_rotation_enabled = true
   }
   image_cleaner_enabled = true
+  cost_analysis_enabled = true
 
   lifecycle {
     ignore_changes = [
