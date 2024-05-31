@@ -31,7 +31,7 @@ jobs:
       - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.8.3
+          terraform_version: 1.8.4
           terraform_wrapper: false
 
       - name: "Terraform Format"
@@ -47,7 +47,7 @@ jobs:
       - name: "Setup TFLint"
         uses: terraform-linters/setup-tflint@v4
         with:
-          tflint_version: v0.46.0
+          tflint_version: v0.51.1
 
       - name: "Run TFLint"
         id: tflint
