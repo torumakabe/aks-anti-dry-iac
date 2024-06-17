@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.8.4"
+  required_version = "~> 1.8.5"
 
   required_providers {
     azurerm = {
@@ -191,7 +191,7 @@ resource "azurerm_kubernetes_cluster" "default" {
     network_plugin_mode = "overlay"
     service_cidr        = "10.0.0.0/16"
     dns_service_ip      = "10.0.0.10"
-    ebpf_data_plane     = "cilium"
+    network_data_plane  = "cilium"
     network_policy      = "cilium"
 
     load_balancer_sku = "standard"
