@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.8.5"
+  required_version = "~> 1.9.1"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.108.0"
+      version = "~> 3.111.0"
     }
 
     random = {
@@ -305,7 +305,7 @@ resource "azurerm_container_group" "demoapp_redis" {
 
   container {
     name   = "redis"
-    image  = "bitnami/redis:7.0.5"
+    image  = "bitnami/redis:7.0.15"
     cpu    = "1.0"
     memory = "1.0"
 
