@@ -29,12 +29,12 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 
 Prerequisites & tested
 
-- [Terraform](https://www.terraform.io/docs/index.html): 1.8.5
-  - hashicorp/azurerm: 3.108.0
+- [Terraform](https://www.terraform.io/docs/index.html): 1.9.1
+  - hashicorp/azurerm: 3.111.0
   - State store: Local
-- [TFLint](https://github.com/terraform-linters/tflint): 0.51.1
+- [TFLint](https://github.com/terraform-linters/tflint): 0.52.0
   - [azurerm plugin](https://github.com/terraform-linters/tflint-ruleset-azurerm): 0.26.0
-- [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.1.3
+- [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.1.4
 - Ubuntu: 22.04.4 LTS
 
 ### Privileges required for execution
