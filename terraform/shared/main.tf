@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.9.2"
+  required_version = "~> 1.9.4"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.113.0"
+      version = "~> 3.116.0"
     }
 
     random = {
@@ -724,6 +724,7 @@ resource "azurerm_dashboard_grafana" "shared" {
   api_key_enabled                   = true
   deterministic_outbound_ip_enabled = true
   public_network_access_enabled     = true
+  grafana_major_version             = 10
 
   azure_monitor_workspace_integrations {
     resource_id = azurerm_monitor_workspace.prometheus_shared["1"].id
