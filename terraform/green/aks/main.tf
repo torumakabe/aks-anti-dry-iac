@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.9.4"
+  required_version = "~> 1.9.5"
 
   required_providers {
     azurerm = {
@@ -137,7 +137,7 @@ resource "azurerm_kubernetes_cluster" "default" {
       hours = [1]
     }
   }
-  node_os_channel_upgrade = "NodeImage"
+  node_os_upgrade_channel = "NodeImage"
   maintenance_window_node_os {
     frequency   = "Weekly"
     interval    = 1
@@ -180,8 +180,6 @@ resource "azurerm_kubernetes_cluster" "default" {
 
   role_based_access_control_enabled = true
   azure_active_directory_role_based_access_control {
-    # will be depricated from AzureRM v4
-    managed                = true
     admin_group_object_ids = var.aks.aad.admin_group_object_ids
     azure_rbac_enabled     = true
   }
@@ -214,8 +212,9 @@ resource "azurerm_kubernetes_cluster" "default" {
   key_vault_secrets_provider {
     secret_rotation_enabled = true
   }
-  image_cleaner_enabled = true
-  cost_analysis_enabled = true
+  image_cleaner_enabled        = true
+  image_cleaner_interval_hours = 24
+  cost_analysis_enabled        = true
 
   lifecycle {
     ignore_changes = [

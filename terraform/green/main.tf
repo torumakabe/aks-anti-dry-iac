@@ -1,19 +1,19 @@
 terraform {
-  required_version = "~> 1.9.4"
+  required_version = "~> 1.9.5"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.116.0"
+      version = "~> 4.0.1"
     }
   }
 }
 
 provider "azurerm" {
-  use_oidc                   = true
-  skip_provider_registration = true
+  use_oidc                        = true
+  resource_provider_registrations = "none"
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
