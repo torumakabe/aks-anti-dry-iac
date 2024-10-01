@@ -16,7 +16,7 @@ spec:
       serviceAccountName: demoapp-sa
       containers:
       - name: session-checker
-        image: ghcr.io/torumakabe/session-checker:v1.3.2 # {"$imagepolicy": "flux-system:session-checker"}
+        image: ghcr.io/torumakabe/session-checker:v1.3.3 # {"$imagepolicy": "flux-system:session-checker"}
         imagePullPolicy: IfNotPresent
         command: ["/session-checker"]
         volumeMounts:
