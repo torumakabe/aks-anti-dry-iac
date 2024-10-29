@@ -1,12 +1,12 @@
 terraform {
-  required_version = "~> 1.9.6"
+  required_version = "~> 1.9.8"
   # Choose the backend according to your requirements
   # backend "remote" {}
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.3.0"
+      version = "~> 4.7.0"
     }
 
     random = {
