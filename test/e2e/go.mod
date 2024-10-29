@@ -2,7 +2,7 @@ module github.com/torumakabe/aks-anti-dry-iac/test/e2e
 
 go 1.23
 
-toolchain go1.23.1
+toolchain go1.23.2
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
@@ -12,14 +12,14 @@ require (
 )
 
 require (
-	github.com/ProtonMail/go-crypto v1.1.0-alpha.5-proton // indirect
+	github.com/ProtonMail/go-crypto v1.1.0-beta.0-proton // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
-	github.com/cloudflare/circl v1.4.0 // indirect
+	github.com/cloudflare/circl v1.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/terraform-json v0.22.1 // indirect
 	github.com/zclconf/go-cty v1.15.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 )
