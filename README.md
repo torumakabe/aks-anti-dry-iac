@@ -30,9 +30,9 @@ DRY is a great concept, and you should be aware that it will come true in the fu
 Prerequisites & tested
 
 - [Terraform](https://www.terraform.io/docs/index.html): 1.9.8
-  - hashicorp/azurerm: 4.7.0
+  - hashicorp/azurerm: 4.10.0
   - State store: Local
-- [TFLint](https://github.com/terraform-linters/tflint): 0.53.0
+- [TFLint](https://github.com/terraform-linters/tflint): 0.54.0
   - [azurerm plugin](https://github.com/terraform-linters/tflint-ruleset-azurerm): 0.27.0
 - [Azure/kubelogin](https://github.com/Azure/kubelogin): 0.1.4
 - Ubuntu: 22.04.5 LTS
@@ -124,7 +124,7 @@ E2E test should also be automated and always ready to run to see the impact of i
   - Cleanup the resources after test automatically
 
 Set variables on e2e.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.
-  
+
 ### CI
 
 Pull Requests trigger the following GitHub Actions as CI. These actions post the result as comments to the PR.
@@ -134,6 +134,7 @@ Pull Requests trigger the following GitHub Actions as CI. These actions post the
 - diff between Blue/Green Terrarform files: [Github Actions workflow](./.github/workflows/ci-terraform-blue.yaml)
   - PR for files /terraform/blue|green directory
 - format(check)/validate/lint/plan Terraform files: [Github Actions workflow](./.github/workflows/ci-terraform-shared.yaml)
+
   - PR for files /terraform/shared|blue|green directory
 
   Set variables on integration.tfvars in shared/blue/green [fixtures](./test/fixtures) before test, or set environment variables.

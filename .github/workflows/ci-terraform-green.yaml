@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/green/**'
+      - "terraform/green/**"
   workflow_dispatch:
 defaults:
   run:
@@ -83,7 +83,7 @@ jobs:
       - name: "Setup TFLint"
         uses: terraform-linters/setup-tflint@v4
         with:
-          tflint_version: v0.53.0
+          tflint_version: v0.54.0
 
       - name: "Run TFLint"
         id: tflint
