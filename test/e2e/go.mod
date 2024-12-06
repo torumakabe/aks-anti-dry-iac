@@ -2,7 +2,7 @@ module github.com/torumakabe/aks-anti-dry-iac/test/e2e
 
 go 1.23
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
