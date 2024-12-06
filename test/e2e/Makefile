@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-TF_VERSION := 1.9.8
+TF_VERSION := 1.10.1
 
 # Before running this test, you must:
 # export GITHUB_TOKEN=your-token
