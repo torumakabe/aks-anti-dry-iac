@@ -1,4 +1,4 @@
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: nginx
@@ -11,7 +11,7 @@ spec:
         kind: HelmRepository
         name: ingress-nginx
         namespace: flux-system
-      version: "4.11.3"
+      version: "4.12.0"
   interval: 5m
   install:
     remediation:
@@ -36,16 +36,16 @@ spec:
       config:
         use-forwarded-headers: "true"
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
       admissionWebhooks:
         patch:
           tolerations:
-          - key: CriticalAddonsOnly
-            operator: Exists
+            - key: CriticalAddonsOnly
+              operator: Exists
       allowSnippetAnnotations: true
     defaultBackend:
       enabled: "true"
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists

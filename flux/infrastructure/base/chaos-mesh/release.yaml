@@ -1,4 +1,4 @@
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: chaos-mesh
@@ -24,12 +24,12 @@ spec:
   values:
     controllerManager:
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
     chaosDaemon:
       runtime: containerd
       socketPath: /run/containerd/containerd.sock
     dnsServer:
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists

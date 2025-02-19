@@ -4,7 +4,7 @@ resources:
   - ../base
 patches:
   - patch: |-
-      apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       metadata:
         name: nginx
@@ -33,7 +33,7 @@ patches:
       name: nginx
       namespace: nginx
   - patch: |-
-      apiVersion: helm.toolkit.fluxcd.io/v2beta1
+      apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       metadata:
         name: chaos-mesh
@@ -57,4 +57,3 @@ patches:
       kind: HelmRelease
       name: chaos-mesh
       namespace: chaos-testing
-

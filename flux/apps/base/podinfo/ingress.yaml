@@ -5,8 +5,6 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^(/podinfo)$ $1/ redirect;
 spec:
   ingressClassName: nginx
   rules:
@@ -18,4 +16,4 @@ spec:
                 port:
                   number: 9898
             path: /podinfo(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
