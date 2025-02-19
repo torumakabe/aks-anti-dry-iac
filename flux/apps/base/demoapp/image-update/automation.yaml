@@ -1,4 +1,4 @@
-apiVersion: image.toolkit.fluxcd.io/v1beta1
+apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageUpdateAutomation
 metadata:
   name: flux-system
@@ -12,7 +12,7 @@ spec:
       author:
         email: fluxcdbot@users.noreply.github.com
         name: fluxcdbot
-      messageTemplate: '{{range .Updated.Images}}{{println .}}{{end}}'
+      messageTemplate: "{{range .Updated.Images}}{{println .}}{{end}}"
     push:
       branch: main
   interval: 10m0s
