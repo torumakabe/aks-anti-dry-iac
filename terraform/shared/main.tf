@@ -305,7 +305,7 @@ resource "azurerm_container_group" "demoapp_redis" {
 
   container {
     name   = "redis"
-    image  = "bitnami/redis:7.0.15"
+    image  = "ghcr.io/torumakabe/redis:7.4"
     cpu    = "1.0"
     memory = "1.0"
 
