@@ -3,15 +3,16 @@
 {
 	"name": "Ubuntu",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
 	"features": {
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
 		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
 		"ghcr.io/devcontainers/features/terraform:1": {
-			"version": "1.9"
+			"version": "1.11.1"
 		},
 		"ghcr.io/flexwie/devcontainer-features/op:1": {},
-		"ghcr.io/devcontainers/features/go:1": {}
+		"ghcr.io/devcontainers/features/go:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 	"customizations": {
 		"vscode": {
@@ -19,9 +20,7 @@
 				"ms-vscode.makefile-tools",
 				"mutantdino.resourcemonitor",
 				"timonwong.shellcheck",
-				"ms-kubernetes-tools.vscode-aks-tools",
-				"mindaro.mindaro",
-				"ms-kubernetes-tools.aks-devx-tools"
+				"ms-kubernetes-tools.vscode-aks-tools"
 			]
 		}
 	},
